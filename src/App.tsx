@@ -9,7 +9,7 @@ import Login from "./pages/Login/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Register from "./pages/Register/Register";
 import Products from "./pages/Products/Products";
-import Orders from "./pages/Orders/Orders";
+// import Orders from "./pages/Orders/Orders";
 import Customers from "./pages/Customers/Customers";
 // import Users from "./pages/Users/Users";
 import Reports from "./pages/Reports/Reports";
@@ -19,6 +19,9 @@ import GemDetails from "./pages/Gemblogs/GemDetails";
 import AddGemstone from "./pages/Gemblogs/AddGemstone";
 // import EditGemstoneForm from "./components/EditGemstoneForm";
 import EditGemStonePage from "./pages/Gemblogs/EditGemStonePage";
+import AddProductPage from "./pages/Products/AddProductPage";
+import ViewProductPage from "./pages/Products/ViewProductPage";
+import EditProductPage from "./pages/Products/EditProductPage";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -74,10 +77,10 @@ function App() {
           path: "/home/products",
           element: <Products />,
         },
-        {
-          path: "/home/orders",
-          element: <Orders />,
-        },
+        // {
+        //   path: "/home/orders",
+        //   element: <Orders />,
+        // },
         {
           path: "/home/customers",
           element: <Customers />,
@@ -110,6 +113,19 @@ function App() {
           path: "/home/gemblogs/edit/:id",
           element: <EditGemStonePage />,
         },
+        {
+          path: "/home/products/add",
+          element: <AddProductPage />,
+        },
+        {
+          path: "/home/products/view/:id",
+          element: <ViewProductPage />,
+        },
+        {
+          path: "/home/products/edit/:id",
+          element: <EditProductPage />,
+        },
+        
       ],
     },
     {

@@ -3,9 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Search, Filter, Plus, MoreVertical, Edit,
-  Trash2, Tag, Package, AlertCircle, ArrowUpDown
+  Search, Filter, Plus, MoreVertical, 
+   Tag, Package, AlertCircle, ArrowUpDown,
+  View
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { userRequest } from '@/utils/requestMethods';
+import { useQuery } from 'react-query';
 // import { AnyAaaaRecord } from 'node:dns';
 
 const Products = () => {
@@ -63,21 +67,21 @@ const Products = () => {
   const statuses = ['All', 'Active', 'Low Stock', 'Out of Stock'];
 
   // Filter products based on search term, category, and status
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = (
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter;
-    const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  // const filteredProducts = products.filter(product => {
+  //   const matchesSearch = (
+  //     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  //   );
+  //   const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter;
+  //   const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
+  //   return matchesSearch && matchesCategory && matchesStatus;
+  // });
 
   const getStatusColor = (status:any) => {
     switch (status) {
-      case 'Active':
+      case 0:
         return 'bg-green-100 text-green-800';
-      case 'Low Stock':
+      case 1:
         return 'bg-yellow-100 text-yellow-800';
       case 'Out of Stock':
         return 'bg-red-100 text-red-800';
@@ -86,15 +90,35 @@ const Products = () => {
     }
   };
 
+  const getAllProductsMethod = () => {
+      return userRequest({
+        url: `/product/get-all-products/`,
+        method: "get",
+      });
+    };
+  
+    const { data: AllProducts } = useQuery("get-all-products", getAllProductsMethod, {
+      onSuccess: () => {
+        console.log(AllProducts);
+      },
+      onError: (error: any) => {
+        console.log(error);
+      },
+    });
+  
+
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen mb-10">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Products</h1>
+        <Link to="/home/products/add">
         <Button className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
+        </Link>
       </div>
 
       {/* Filters and Search */}
@@ -138,64 +162,8 @@ const Products = () => {
         </CardContent>
       </Card>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-20 h-20 rounded object-cover"
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{product.name}</h3>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">{product.category}</span>
-                  </div>
-                  <div className="mt-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusColor(product.status)}`}>
-                      {product.status === 'Low Stock' && <AlertCircle className="h-3 w-3" />}
-                      {product.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p className="font-medium">${product.price.toFixed(2)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Stock</p>
-                  <p className="font-medium">{product.stock} units</p>
-                </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
-                  <Edit className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2 text-red-600 hover:text-red-700">
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+       {/* Quick Stats */}
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -251,6 +219,67 @@ const Products = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {AllProducts?.data?.map((product:any) => (
+          <Card key={product?.sku} className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <img
+                  src={product?.base_img_url}
+                  alt={product?.name}
+                  className="w-20 h-20 rounded object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium">{product?.name}</h3>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-500">SKU: {product?.sku}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">{product?.category}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">{product?.subcategory}</span>
+                  </div>
+                  <div className="mt-2">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusColor(product?.quality)}`}>
+                      {product?.quantity === 0 && <AlertCircle className="h-3 w-3" />}
+                      {product?.quantity}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Price</p>
+                  <p className={`font-medium ${product?.sale_price>0 && `line-through`}`}>Rs. {product?.actual_price}</p>
+                  { product?.sale_price >0 && <p className="font-medium">Rs. {product?.sale_price}</p> }
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Stock</p>
+                  <p className="font-medium">{product?.quantity} units</p>
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Link to={`/home/products/view/${product?.id}`}>
+                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
+                  <View className="h-4 w-4" />
+                  View
+                </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+     
     </div>
   );
 };
