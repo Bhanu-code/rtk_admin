@@ -11,10 +11,12 @@ import Register from "./pages/Register/Register";
 import Products from "./pages/Products/Products";
 import Orders from "./pages/Orders/Orders";
 import Customers from "./pages/Customers/Customers";
-import Users from "./pages/Users/Users";
+// import Users from "./pages/Users/Users";
 import Reports from "./pages/Reports/Reports";
 import Analytics from "./pages/Analytics/Analytics";
 import Gemblogs from "./pages/Gemblogs/Gemblogs";
+import GemDetails from "./pages/Gemblogs/GemDetails";
+import AddGemstone from "./pages/Gemblogs/AddGemstone";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -78,10 +80,10 @@ function App() {
           path: "/home/customers",
           element: <Customers />,
         },
-        {
-          path: "/home/users",
-          element: <Users />,
-        },
+        // {
+        //   path: "/home/users",
+        //   element: <Users />,
+        // },
         {
           path: "/home/reports",
           element: <Reports />,
@@ -93,6 +95,14 @@ function App() {
         {
           path: "/home/gemblogs",
           element: <Gemblogs />,
+        },
+        {
+          path: "/home/gemblogs/:id",
+          element: <GemDetails />,
+        },
+        {
+          path: "/home/gemblogs/add",
+          element: <AddGemstone />,
         },
       ],
     },

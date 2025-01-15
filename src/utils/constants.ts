@@ -15,10 +15,10 @@ export const tabs = [
         tab_name: "Customers",
         link: "/home/customers"
     },
-    {
-        tab_name: "Users",
-        link: "/home/users"
-    },
+    // {
+    //     tab_name: "Users",
+    //     link: "/home/users"
+    // },
     {
         tab_name: "Reports",
         link: "/home/reports"
