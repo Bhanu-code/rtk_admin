@@ -4,10 +4,10 @@ import { Label } from "@/components/ui/label";
 import { ClientOnly } from 'remix-utils/client-only';
 import { Button } from '../ui/button';
 
-interface FormattedPasteAreaProps {
-  content: string;
-  onChange: (content: string) => void;
-}
+// interface FormattedPasteAreaProps {
+//   content: string;
+//   onChange: (content: string) => void;
+// }
 
 interface WhoShouldWearProps {
   formData: {

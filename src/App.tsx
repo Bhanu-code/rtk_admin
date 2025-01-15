@@ -17,6 +17,8 @@ import Analytics from "./pages/Analytics/Analytics";
 import Gemblogs from "./pages/Gemblogs/Gemblogs";
 import GemDetails from "./pages/Gemblogs/GemDetails";
 import AddGemstone from "./pages/Gemblogs/AddGemstone";
+// import EditGemstoneForm from "./components/EditGemstoneForm";
+import EditGemStonePage from "./pages/Gemblogs/EditGemStonePage";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -103,6 +105,10 @@ function App() {
         {
           path: "/home/gemblogs/add",
           element: <AddGemstone />,
+        },
+        {
+          path: "/home/gemblogs/edit/:id",
+          element: <EditGemStonePage />,
         },
       ],
     },

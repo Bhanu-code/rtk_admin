@@ -36,11 +36,11 @@ const Gemblogs = () => {
   });
 
   return (
-    <div className="p-3">
+    <div className="p-3 mb-8">
       {/* <GemstoneForm/> */}
       <div className="flex flex-end">
         <Link to="/home/gemblogs/add">
-          <Button className="px-2 py-1 ml-auto bg-blue-600 text-white mb-10 fixed">
+          <Button className="px-2 py-1 ml-auto bg-blue-600 text-white  mb-5">
             Add Gemstone
           </Button>
         </Link>

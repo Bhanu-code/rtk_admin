@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 
 interface GemstoneFormData {
   name: string;
@@ -30,7 +30,12 @@ interface GemstoneFormData {
   curiousFacts: string;
 }
 
-const GemstoneForm = () => {
+interface EditGemstoneFormProps {
+  gemstoneId: any;
+  onSuccess?: () => void;
+}
+
+const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
   const [formData, setFormData] = useState<GemstoneFormData>({
     name: "",
     alternateNames: [""],
@@ -45,7 +50,40 @@ const GemstoneForm = () => {
     curiousFacts: "",
   });
 
-  const createGemblogMutation = useMutation({
+  // Fetch existing gemstone data
+  const { data: gemstoneData, isLoading } = useQuery(
+    ["gemstone", gemstoneId],
+    async () => {
+      const response = await fetch(
+        `http://localhost:5000/gemstones/get-gemblog/${gemstoneId}/`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch gemstone data");
+      }
+      return response.json();
+    }
+  );
+
+  // Update form data when gemstone data is fetched
+  useEffect(() => {
+    if (gemstoneData) {
+      setFormData({
+        name: gemstoneData.name || "",
+        alternateNames: gemstoneData.alternateNames || [""],
+        shortBenefits: gemstoneData.shortBenefits || "",
+        description: gemstoneData.description || "",
+        whoShouldWear: gemstoneData.whoShouldWear || "",
+        benefits: gemstoneData.benefits || "",
+        prices: gemstoneData.prices || "",
+        quality: gemstoneData.quality || "",
+        specifications: gemstoneData.specifications || "",
+        faqs: gemstoneData.faqs || "",
+        curiousFacts: gemstoneData.curiousFacts || "",
+      });
+    }
+  }, [gemstoneData]);
+
+  const updateGemblogMutation = useMutation({
     mutationFn: async () => {
       const gemBlogData = {
         name: formData.name,
@@ -61,16 +99,16 @@ const GemstoneForm = () => {
       };
 
       const response = await fetch(
-        "http://localhost:5000/gemstones/create-gemblog",
+        `http://localhost:5000/gemstones/update-gemblog/${gemstoneId}/`,
         {
-          method: "POST",
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(gemBlogData),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to submit gemstone data");
+        throw new Error("Failed to update gemstone data");
       }
 
       return response.json();
@@ -78,8 +116,9 @@ const GemstoneForm = () => {
     onSuccess: () => {
       setSubmitStatus({
         type: "success",
-        message: "Gemstone data submitted successfully!",
+        message: "Gemstone data updated successfully!",
       });
+      onSuccess?.();
     },
     onError: (error: Error) => {
       setSubmitStatus({
@@ -97,6 +136,7 @@ const GemstoneForm = () => {
     message: "",
   });
 
+  // Rest of the component remains the same as GemstoneForm
   const handleInputChange = (
     section: string,
     field: string,
@@ -122,62 +162,12 @@ const GemstoneForm = () => {
     });
   };
 
-  const saveFormToJson = () => {
-    try {
-      const jsonData = JSON.stringify(formData, null, 2);
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "gemstone-data.json";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      setSubmitStatus({
-        type: "success",
-        message: "Data saved successfully!",
-      });
-    } catch (error) {
-      setSubmitStatus({
-        type: "error",
-        message: "Failed to save data",
-      });
-    }
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonContent = JSON.parse(e.target?.result as string);
-        setFormData((prevData) => ({
-          ...prevData,
-          ...jsonContent,
-        }));
-        setSubmitStatus({
-          type: "success",
-          message: "Data loaded successfully!",
-        });
-      } catch (error) {
-        setSubmitStatus({
-          type: "error",
-          message: "Failed to load data",
-        });
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    createGemblogMutation.mutate();
+    updateGemblogMutation.mutate();
   };
 
+  // Same renderFormattedSection function as before
   const renderFormattedSection = (
     title: string,
     content: string,
@@ -208,14 +198,29 @@ const GemstoneForm = () => {
     </div>
   );
 
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center">
+              Loading gemstone data...
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Gemstone Data Entry</CardTitle>
+          <CardTitle>Edit Gemstone: {formData.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Same Accordion structure as before */}
             <Accordion type="single" collapsible className="w-full">
               {/* Basic Information */}
               <AccordionItem value="basic">
@@ -280,6 +285,7 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
+              {/* Rest of the accordion items remain the same */}
               <AccordionItem value="wearing">
                 <AccordionTrigger>Who Should Wear</AccordionTrigger>
                 <AccordionContent>
@@ -291,7 +297,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Benefits */}
               <AccordionItem value="benefits">
                 <AccordionTrigger>Benefits</AccordionTrigger>
                 <AccordionContent>
@@ -303,7 +308,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Prices */}
               <AccordionItem value="prices">
                 <AccordionTrigger>Prices</AccordionTrigger>
                 <AccordionContent>
@@ -315,7 +319,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Quality */}
               <AccordionItem value="quality">
                 <AccordionTrigger>Quality</AccordionTrigger>
                 <AccordionContent>
@@ -327,7 +330,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Specifications */}
               <AccordionItem value="specifications">
                 <AccordionTrigger>Specifications</AccordionTrigger>
                 <AccordionContent>
@@ -339,7 +341,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* FAQs */}
               <AccordionItem value="faqs">
                 <AccordionTrigger>FAQs</AccordionTrigger>
                 <AccordionContent>
@@ -351,7 +352,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Curious Facts */}
               <AccordionItem value="curiousFacts">
                 <AccordionTrigger>Curious Facts</AccordionTrigger>
                 <AccordionContent>
@@ -363,29 +363,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-
-            <div className="flex gap-4 mt-6">
-              <Button type="button" onClick={saveFormToJson}>
-                Save to JSON
-              </Button>
-              <div>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  style={{ display: "none" }}
-                  id="jsonFileInput"
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    document.getElementById("jsonFileInput")?.click()
-                  }
-                >
-                  Load from JSON
-                </Button>
-              </div>
-            </div>
 
             {submitStatus.message && (
               <Alert
@@ -401,8 +378,9 @@ const GemstoneForm = () => {
             <Button
               type="submit"
               className="w-full"
+              disabled={updateGemblogMutation.isLoading}
             >
-              Save Gemstone Information
+              Update Gemstone Information
             </Button>
           </form>
         </CardContent>
@@ -411,4 +389,4 @@ const GemstoneForm = () => {
   );
 };
 
-export default GemstoneForm;
+export default EditGemstoneForm;
