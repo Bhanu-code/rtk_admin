@@ -6,14 +6,14 @@ const Sidebar = () => {
   const [active, setActive] = useState("Dashboard");
 
   return (
-    <div className="pl-2 py-2 flex flex-col items-start justify-start gap-y-2">
+    <div className="pl-2 py-2 h-screen text-white flex flex-col bg-slate-600 text-left justify-start gap-y-2">
       {tabs.map((item: any) => (
-        <Link to={item.link}>
+        <Link to={item.link} className="text-left">
           <button
             onClick={() => {
               setActive(item?.tab_name);
             }}
-            className={`${active===item.tab_name && `border  border-blue-700 rounded-md`} w-32 py-1`}
+            className={`${active===item.tab_name && `border  border-white rounded-md`} text-left pl-5 w-32 py-1`}
           >
             {item?.tab_name}
           </button>

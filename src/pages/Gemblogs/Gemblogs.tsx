@@ -5,6 +5,7 @@ import { useQuery } from "react-query";
 import { Link } from "react-router-dom";
 import Image from "../../assets/react.svg";
 import { Button } from "@/components/ui/button";
+import { ClipLoader } from "react-spinners";
 
 // interface GemstoneData {
 //   name: string;
@@ -26,7 +27,7 @@ const Gemblogs = () => {
     });
   };
 
-  const { data: gemblogs } = useQuery("get-all-gems", getAllGems, {
+  const { data: gemblogs, isLoading } = useQuery("get-all-gems", getAllGems, {
     onSuccess: () => {
       console.log(gemblogs);
     },
@@ -47,7 +48,7 @@ const Gemblogs = () => {
       </div>
 
       <div className="grid grid-cols-5 gap-x-10 gap-y-5 m-5 mt-10">
-        {gemblogs?.data?.map((item: any) => (
+        { isLoading ? <div className="w-full text-center m-auto"><ClipLoader size={35} color="blue" /></div> : gemblogs?.data?.map((item: any) => (
           <Link to={`/home/gemblogs/${item?.id}`}>
             <div className="shadow-none transition-all duration-300">
               <div className="p-2">

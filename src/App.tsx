@@ -22,14 +22,14 @@ import EditGemStonePage from "./pages/Gemblogs/EditGemStonePage";
 import AddProductPage from "./pages/Products/AddProductPage";
 import ViewProductPage from "./pages/Products/ViewProductPage";
 import EditProductPage from "./pages/Products/EditProductPage";
+import Orders from "./pages/Orders/Orders";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
 function App() {
-  const userType = useSelector((state: any) => state.user.userType);
+  const userType = useSelector((state:any) => state.user.userType);
   // const userType = "admin"
 
-  { !userType && redirect("/") }
 
   const [theme, setTheme] = useState("light");
 
@@ -77,10 +77,10 @@ function App() {
           path: "/home/products",
           element: <Products />,
         },
-        // {
-        //   path: "/home/orders",
-        //   element: <Orders />,
-        // },
+        {
+          path: "/home/orders",
+          element: <Orders />,
+        },
         {
           path: "/home/customers",
           element: <Customers />,

@@ -1,335 +1,319 @@
-// import { useState } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Button } from "@/components/ui/button";
-// // import { Select } from "@/components/ui/select";
-// import {
-//   Search,
-//   Filter,
-//   Download,
-//   MoreVertical,
-//   Eye,
-//   CheckCircle,
-//   XCircle,
-//   AlertCircle,
-// } from "lucide-react";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Download, ArrowUpDown, MoreVertical, Package, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
-// const Orders = () => {
-//   // Sample orders data - would come from your backend in a real app
-//   const initialOrders = [
-//     {
-//       id: "#12345",
-//       customer: "John Doe",
-//       email: "john@example.com",
-//       date: "2025-01-14",
-//       amount: 129.99,
-//       status: "Processing",
-//       items: [
-//         { name: "Wireless Earbuds", quantity: 1, price: 79.99 },
-//         { name: "Phone Case", quantity: 1, price: 50.0 },
-//       ],
-//     },
-//     {
-//       id: "#12344",
-//       customer: "Jane Smith",
-//       email: "jane@example.com",
-//       date: "2025-01-13",
-//       amount: 239.99,
-//       status: "Delivered",
-//       items: [{ name: "Smart Watch", quantity: 1, price: 239.99 }],
-//     },
-//     {
-//       id: "#12343",
-//       customer: "Bob Wilson",
-//       email: "bob@example.com",
-//       date: "2025-01-13",
-//       amount: 99.99,
-//       status: "Pending",
-//       items: [{ name: "USB Cable", quantity: 2, price: 49.99 }],
-//     },
-//     {
-//       id: "#12342",
-//       customer: "Alice Brown",
-//       email: "alice@example.com",
-//       date: "2025-01-12",
-//       amount: 189.99,
-//       status: "Cancelled",
-//       items: [{ name: "Bluetooth Speaker", quantity: 1, price: 189.99 }],
-//     },
-//   ];
+const Orders = () => {
+  // Sample orders data - in a real application, this would come from your backend
+  const initialOrders = [
+    {
+      id: 'ORD-2024-001',
+      customer: 'Sarah Johnson',
+      date: '2024-01-15',
+      total: 299.99,
+      items: 3,
+      status: 'Processing',
+      payment: 'Credit Card',
+      shipping: 'Express',
+      email: 'sarah.j@example.com'
+    },
+    {
+      id: 'ORD-2024-002',
+      customer: 'Michael Chen',
+      date: '2024-01-15',
+      total: 149.50,
+      items: 2,
+      status: 'Delivered',
+      payment: 'PayPal',
+      shipping: 'Standard',
+      email: 'mchen@example.com'
+    },
+    {
+      id: 'ORD-2024-003',
+      customer: 'Emma Davis',
+      date: '2024-01-14',
+      total: 524.75,
+      items: 4,
+      status: 'Pending',
+      payment: 'Credit Card',
+      shipping: 'Next Day',
+      email: 'emma.d@example.com'
+    },
+    {
+      id: 'ORD-2024-004',
+      customer: 'James Wilson',
+      date: '2024-01-14',
+      total: 89.99,
+      items: 1,
+      status: 'Delivered',
+      payment: 'Credit Card',
+      shipping: 'Standard',
+      email: 'jwilson@example.com'
+    },
+    {
+      id: 'ORD-2024-005',
+      customer: 'Lisa Thompson',
+      date: '2024-01-13',
+      total: 199.99,
+      items: 2,
+      status: 'Processing',
+      payment: 'PayPal',
+      shipping: 'Express',
+      email: 'lisa.t@example.com'
+    }
+  ];
 
-//   const [orders, setOrders] = useState(initialOrders);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [statusFilter, setStatusFilter] = useState("All");
-//   const [selectedOrder, setSelectedOrder] = useState({
-//     id: "",
-//     customer: "",
-//     email: "",
-//     status: "",
-//   });
+  const [orders, setOrders] = useState(initialOrders);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
-//   console.log(setOrders(initialOrders))
+  // Function to get status badge styling
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Delivered':
+        return 'bg-green-100 text-green-800';
+      case 'Processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'Pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-//   // Filter orders based on search term and status
-//   const filteredOrders = orders.filter((order) => {
-//     const matchesSearch =
-//       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       order.email.toLowerCase().includes(searchTerm.toLowerCase());
-//     const matchesStatus =
-//       statusFilter === "All" || order.status === statusFilter;
-//     return matchesSearch && matchesStatus;
-//   });
+  // Function to get status icon
+  const StatusIcon = ({ status }) => {
+    switch (status) {
+      case 'Delivered':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'Processing':
+        return <Clock className="h-5 w-5 text-blue-600" />;
+      case 'Pending':
+        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+      default:
+        return <Package className="h-5 w-5 text-gray-600" />;
+    }
+  };
 
-//   const getStatusColor = (status: any) => {
-//     switch (status) {
-//       case "Delivered":
-//         return "bg-green-100 text-green-800";
-//       case "Processing":
-//         return "bg-blue-100 text-blue-800";
-//       case "Pending":
-//         return "bg-yellow-100 text-yellow-800";
-//       case "Cancelled":
-//         return "bg-red-100 text-red-800";
-//       default:
-//         return "bg-gray-100 text-gray-800";
-//     }
-//   };
+  return (
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Header with controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Orders Management</h1>
+          <p className="text-gray-500">View and manage all customer orders</p>
+        </div>
+        
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
+            <Download className="h-4 w-4" />
+            <span>Export</span>
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <Package className="h-4 w-4" />
+            <span>New Order</span>
+          </button>
+        </div>
+      </div>
 
-//   const getStatusIcon = (status: any) => {
-//     switch (status) {
-//       case "Delivered":
-//         return <CheckCircle className="h-4 w-4" />;
-//       case "Processing":
-//         return <AlertCircle className="h-4 w-4" />;
-//       case "Pending":
-//         return <AlertCircle className="h-4 w-4" />;
-//       case "Cancelled":
-//         return <XCircle className="h-4 w-4" />;
-//       default:
-//         return null;
-//     }
-//   };
+      {/* Search and Filter Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <input
+            type="text"
+            placeholder="Search orders..."
+            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <select
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Processing">Processing</option>
+          <option value="Delivered">Delivered</option>
+        </select>
 
-//   return (
-//     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-//       <div className="flex justify-between items-center">
-//         <h1 className="text-2xl font-bold">Orders Management</h1>
-//         <Button className="bg-blue-600 hover:bg-blue-700">
-//           <Download className="h-4 w-4 mr-2" />
-//           Export Orders
-//         </Button>
-//       </div>
+        <select
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          defaultValue="last7days"
+        >
+          <option value="today">Today</option>
+          <option value="last7days">Last 7 Days</option>
+          <option value="last30days">Last 30 Days</option>
+          <option value="custom">Custom Range</option>
+        </select>
 
-//       {/* Filters and Search */}
-//       <Card>
-//         <CardContent className="p-4">
-//           <div className="flex flex-col md:flex-row gap-4">
-//             <div className="relative flex-1">
-//               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-//               <Input
-//                 placeholder="Search orders, customers, or email..."
-//                 className="pl-10"
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//               />
-//             </div>
-//             <div className="flex gap-4">
-//               <select
-//                 className="px-4 py-2 border rounded-md"
-//                 value={statusFilter}
-//                 onChange={(e) => setStatusFilter(e.target.value)}
-//               >
-//                 <option value="All">All Status</option>
-//                 <option value="Processing">Processing</option>
-//                 <option value="Delivered">Delivered</option>
-//                 <option value="Pending">Pending</option>
-//                 <option value="Cancelled">Cancelled</option>
-//               </select>
-//               <Button variant="outline" className="flex items-center gap-2">
-//                 <Filter className="h-4 w-4" />
-//                 More Filters
-//               </Button>
-//             </div>
-//           </div>
-//         </CardContent>
-//       </Card>
+        <select
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          defaultValue="all"
+        >
+          <option value="all">All Payment Methods</option>
+          <option value="credit">Credit Card</option>
+          <option value="paypal">PayPal</option>
+          <option value="bank">Bank Transfer</option>
+        </select>
+      </div>
 
-//       {/* Orders Table */}
-//       <Card>
-//         <CardContent className="p-0">
-//           <div className="overflow-x-auto">
-//             <table className="w-full">
-//               <thead className="bg-gray-50 border-b">
-//                 <tr>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Order ID
-//                   </th>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Customer
-//                   </th>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Date
-//                   </th>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Amount
-//                   </th>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Status
-//                   </th>
-//                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-//                     Actions
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y">
-//                 {filteredOrders.map((order: any) => (
-//                   <tr
-//                     key={order.id}
-//                     className="hover:bg-gray-50 cursor-pointer"
-//                     onClick={() => setSelectedOrder(order)}
-//                   >
-//                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                       {order.id}
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <div className="text-sm font-medium text-gray-900">
-//                         {order.customer}
-//                       </div>
-//                       <div className="text-sm text-gray-500">{order.email}</div>
-//                     </td>
-//                     <td className="px-6 py-4 text-sm text-gray-500">
-//                       {new Date(order.date).toLocaleDateString()}
-//                     </td>
-//                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-//                       ${order.amount.toFixed(2)}
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <span
-//                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm ${getStatusColor(
-//                           order.status
-//                         )}`}
-//                       >
-//                         {getStatusIcon(order.status)}
-//                         {order.status}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center gap-2">
-//                         <Button variant="ghost" size="sm">
-//                           <Eye className="h-4 w-4" />
-//                         </Button>
-//                         <Button variant="ghost" size="sm">
-//                           <MoreVertical className="h-4 w-4" />
-//                         </Button>
-//                       </div>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         </CardContent>
-//       </Card>
+      {/* Orders Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left py-4 px-6 font-medium">
+                    <div className="flex items-center gap-2">
+                      Order ID
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="text-left py-4 px-6 font-medium">
+                    <div className="flex items-center gap-2">
+                      Customer
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="text-left py-4 px-6 font-medium">
+                    <div className="flex items-center gap-2">
+                      Date
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </th>
+                  <th className="text-right py-4 px-6 font-medium">Total</th>
+                  <th className="text-center py-4 px-6 font-medium">Status</th>
+                  <th className="text-right py-4 px-6 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {orders.map((order) => (
+                  <tr 
+                    key={order.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedOrder(order)}
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-gray-400" />
+                        {order.id}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div>
+                        <p className="font-medium">{order.customer}</p>
+                        <p className="text-sm text-gray-500">{order.email}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div>
+                        <p>{new Date(order.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">{order.shipping}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div>
+                        <p className="font-medium">${order.total.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">{order.items} items</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex justify-center">
+                        <span className={`px-3 py-1 rounded-full text-sm ${getStatusStyle(order.status)}`}>
+                          <div className="flex items-center gap-2">
+                            <StatusIcon status={order.status} />
+                            {order.status}
+                          </div>
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <button className="p-2 hover:bg-gray-100 rounded-full">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-//       {/* Order Details Modal */}
-//       {selectedOrder && (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-//           <Card className="w-full max-w-2xl">
-//             <CardHeader>
-//               <CardTitle className="flex justify-between items-center">
-//                 <span>Order Details - {selectedOrder.id}</span>
-//                 <Button
-//                   variant="ghost"
-//                   onClick={() =>
-//                     setSelectedOrder({
-//                       id: "",
-//                       customer: "",
-//                       email: "",
-//                       status: "",
-//                     })
-//                   }
-//                 >
-//                   <XCircle className="h-4 w-4" />
-//                 </Button>
-//               </CardTitle>
-//             </CardHeader>
-//             <CardContent>
-//               <div className="space-y-4">
-//                 <div className="grid grid-cols-2 gap-4">
-//                   <div>
-//                     <p className="text-sm text-gray-500">Customer</p>
-//                     <p className="font-medium">{selectedOrder.customer}</p>
-//                     <p className="text-sm text-gray-500">
-//                       {selectedOrder.email}
-//                     </p>
-//                   </div>
-//                   <div>
-//                     <p className="text-sm text-gray-500">Order Status</p>
-//                     <span
-//                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm ${getStatusColor(
-//                         selectedOrder.status
-//                       )}`}
-//                     >
-//                       {getStatusIcon(selectedOrder.status)}
-//                       {selectedOrder.status}
-//                     </span>
-//                   </div>
-//                 </div>
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Order Details</CardTitle>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Order ID</p>
+                    <p className="font-medium">{selectedOrder.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Date</p>
+                    <p className="font-medium">{new Date(selectedOrder.date).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Customer</p>
+                    <p className="font-medium">{selectedOrder.customer}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{selectedOrder.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Payment Method</p>
+                    <p className="font-medium">{selectedOrder.payment}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Shipping Method</p>
+                    <p className="font-medium">{selectedOrder.shipping}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Amount</p>
+                    <p className="font-medium">${selectedOrder.total.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <span className={`inline-block mt-1 px-3 py-1 rounded-full text-sm ${getStatusStyle(selectedOrder.status)}`}>
+                      {selectedOrder.status}
+                    </span>
+                  </div>
+                </div>
 
-//                 <div>
-//                   <h3 className="font-medium mb-2">Order Items</h3>
-//                   <table className="w-full">
-//                     <thead className="bg-gray-50">
-//                       <tr>
-//                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-//                           Item
-//                         </th>
-//                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-//                           Quantity
-//                         </th>
-//                         <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-//                           Price
-//                         </th>
-//                       </tr>
-//                     </thead>
-//                     <tbody className="divide-y">
-//                       {/* {selectedOrder?.items?.map((item:any, index:any) => (
-//                         <tr key={index}>
-//                           <td className="px-4 py-2 text-sm">{item.name}</td>
-//                           <td className="px-4 py-2 text-sm">{item.quantity}</td>
-//                           <td className="px-4 py-2 text-sm">${item.price.toFixed(2)}</td>
-//                         </tr>
-//                       ))} */}
-//                     </tbody>
-//                   </table>
-//                 </div>
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-end gap-3">
+                    <button className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+                      Print Order
+                    </button>
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                      Update Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
 
-//                 <div className="flex justify-end gap-2 mt-4">
-//                   <Button
-//                     variant="outline"
-//                     onClick={() =>
-//                       setSelectedOrder({
-//                         id: "",
-//                         customer: "",
-//                         email: "",
-//                         status: "",
-//                       })
-//                     }
-//                   >
-//                     Close
-//                   </Button>
-//                   <Button className="bg-blue-600 hover:bg-blue-700">
-//                     Update Status
-//                   </Button>
-//                 </div>
-//               </div>
-//             </CardContent>
-//           </Card>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default Orders;
+export default Orders;
