@@ -10,11 +10,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
 import { useMutation } from "react-query";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface GemstoneFormData {
   name: string;
@@ -28,6 +30,7 @@ interface GemstoneFormData {
   specifications: string;
   faqs: string;
   curiousFacts: string;
+  image?: File;
 }
 
 const GemstoneForm = () => {
@@ -45,27 +48,35 @@ const GemstoneForm = () => {
     curiousFacts: "",
   });
 
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  const navigateTo = useNavigate();
+
   const createGemblogMutation = useMutation({
     mutationFn: async () => {
-      const gemBlogData = {
-        name: formData.name,
-        description: formData.description,
-        shortBenefits: formData.shortBenefits,
-        whoShouldWear: formData.whoShouldWear,
-        benefits: formData.benefits,
-        prices: formData.prices,
-        quality: formData.quality,
-        specifications: formData.specifications,
-        faqs: formData.faqs,
-        curiousFacts: formData.curiousFacts,
-      };
+      // Create FormData instance to handle file upload
+      const formDataToSend = new FormData();
+      
+      // Append all text fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'alternateNames') {
+          formDataToSend.append(key, JSON.stringify(value));
+        } else if (key !== 'image') {
+          formDataToSend.append(key, value as string);
+        }
+      });
+      
+      // Append the image if it exists
+      if (formData.image) {
+        formDataToSend.append('image', formData.image);
+      }
 
       const response = await fetch(
         "http://localhost:5000/gemstones/create-gemblog",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(gemBlogData),
+          // Don't set Content-Type header - let the browser set it with boundary for FormData
+          body: formDataToSend,
         }
       );
 
@@ -80,6 +91,9 @@ const GemstoneForm = () => {
         type: "success",
         message: "Gemstone data submitted successfully!",
       });
+
+      toast.success("Gemstone data submitted successfully!", { position: "bottom-right", duration: 2000 });
+      navigateTo("/home/gemblogs");
     },
     onError: (error: Error) => {
       setSubmitStatus({
@@ -121,10 +135,29 @@ const GemstoneForm = () => {
       return newData;
     });
   };
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Update form data with the image file
+    setFormData(prev => ({
+      ...prev,
+      image: file
+    }));
+
+    // Create and set image preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const saveFormToJson = () => {
     try {
-      const jsonData = JSON.stringify(formData, null, 2);
+      // Create a copy of formData without the image for JSON export
+      const { image, ...dataForExport } = formData;
+      const jsonData = JSON.stringify(dataForExport, null, 2);
       const blob = new Blob([jsonData], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -172,6 +205,7 @@ const GemstoneForm = () => {
     };
     reader.readAsText(file);
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +264,38 @@ const GemstoneForm = () => {
                       }
                       placeholder="Enter gemstone name"
                     />
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-2">
+                    <Label>Gemstone Image</Label>
+                    <div className="flex flex-col items-center p-4 border-2 border-dashed rounded-lg">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="imageUpload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('imageUpload')?.click()}
+                        className="mb-2"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Image
+                      </Button>
+                      {imagePreview && (
+                        <div className="mt-4">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="max-w-xs rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
