@@ -182,9 +182,9 @@ const GemDetails = () => {
         </div>
 
         <img
-          src={Image}
+          src={data?.data?.imageUrl ? data?.data?.imageUrl : Image}
           alt="Red Coral Gemstone"
-          className="w-64 h-64 object-cover rounded-lg shadow-lg mt-10 ml-20"
+          className="w-64 h-64 object-contain rounded-lg shadow-lg mt-10 ml-20"
         />
       </div>
 
