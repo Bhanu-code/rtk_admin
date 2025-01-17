@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// import { toast } from "sonner";
+import { useMutation } from "react-query";
+import { toast } from "sonner";
+import { userRequest } from "@/utils/requestMethods";
+import { useSelector } from "react-redux";
+import { X } from "lucide-react";
 
 interface ProductFormData {
   base_img_url: File | null;
@@ -40,6 +46,72 @@ interface ProductFormData {
   color: string;
 }
 
+const FilePreview = ({ file, onRemove }) => {
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+
+    // Create preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    // Cleanup
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  if (!preview) return null;
+
+  return (
+    <div className="relative">
+      {file.type.startsWith('image/') ? (
+        <img 
+          src={preview} 
+          alt="Preview" 
+          className="w-full h-32 object-contain  rounded-md"
+        />
+      ) : (
+        <video 
+          src={preview} 
+          className="w-full h-32 object-contain rounded-md" 
+          controls
+        />
+      )}
+      <button
+        onClick={onRemove}
+        className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+
+const validateProduct = (formData: ProductFormData) => {
+  const errors: string[] = [];
+
+  if (!formData.category) {
+    errors.push("Category cannot be null");
+  }
+  if (formData.actual_price < 0 || formData.sale_price < 0) {
+    errors.push("Negative Price not allowed!");
+  }
+  if (!formData.actual_price && formData.sale_price) {
+    errors.push("Actual Price cannot be null!");
+  }
+  if (formData.sale_price <= formData.actual_price) {
+    errors.push("Sale Price cannot be less than Actual Price!");
+  }
+
+  return errors;
+};
+
+
+
 const AddProductForm = () => {
   const [formData, setFormData] = React.useState<ProductFormData>({
     base_img_url: null,
@@ -51,7 +123,7 @@ const AddProductForm = () => {
     name: "",
     description: null,
     category: "",
-    subcategory: "",
+    subcategory: "", // Now a free text input
     quantity: 1,
     actual_price: 0,
     sale_price: 0,
@@ -61,13 +133,34 @@ const AddProductForm = () => {
     weight_ratti: 0,
     length: 0,
     width: 0,
-    shape: "",
-    cut: "",
+    shape: "", // Now a free text input
+    cut: "", // Now a free text input
     treatment: "",
     composition: "",
     certification: "",
     color: "",
   });
+
+  const createFormDataWithFiles = () => {
+    const formDataToSend = new FormData();
+    
+    // Append all files
+    if (formData.base_img_url) formDataToSend.append('base_img', formData.base_img_url);
+    if (formData.sec_img1_url) formDataToSend.append('sec_img1', formData.sec_img1_url);
+    if (formData.sec_img2_url) formDataToSend.append('sec_img2', formData.sec_img2_url);
+    if (formData.sec_img3_url) formDataToSend.append('sec_img3', formData.sec_img3_url);
+    if (formData.product_vid_url) formDataToSend.append('product_video', formData.product_vid_url);
+
+    // Append other form data
+    Object.keys(formData).forEach(key => {
+      if (!key.includes('_url')) {
+        formDataToSend.append(key, formData[key]);
+      }
+    });
+
+    return formDataToSend;
+  };
+
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -91,6 +184,7 @@ const AddProductForm = () => {
     }
   };
 
+  // Modified to handle only category selection
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -98,10 +192,89 @@ const AddProductForm = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const token = useSelector((state: any) => state.user.accessToken);
+
+  const createProductMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) throw new Error('Authentication token is missing');
+
+      const formDataToSend = createFormDataWithFiles();
+
+      try {
+        const response = await userRequest({
+          url: "/product/create-product",
+          method: "POST",
+          data: formDataToSend,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (!response.data) throw new Error('No data received from server');
+        return response.data;
+      } catch (error) {
+        console.error('Error details:', error?.response?.data);
+        throw new Error(error?.response?.data?.message || 'Failed to create product');
+      }
+    },
+    onSuccess: () => {
+      toast.success("Product created successfully!", {
+        position: "bottom-right",
+        duration: 2000
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message, {
+        position: "bottom-right",
+        duration: 2000
+      });
+    }
+  });
+
+  const renderFileInput = (fieldName, label, accept) => (
+    <div className="space-y-2">
+      <Label htmlFor={fieldName}>{label}</Label>
+      <div className="space-y-2">
+        <Input
+          id={fieldName}
+          type="file"
+          accept={accept}
+          onChange={(e) => handleFileChange(e, fieldName)}
+          className="mb-2"
+        />
+        <FilePreview
+          file={formData[fieldName]}
+          onRemove={() => handleFileRemove(fieldName)}
+        />
+      </div>
+    </div>
+  );
+
+  const handleFileRemove = (fieldName) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: null
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add your API call here
+    const validationErrors = validateProduct(formData);
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors.join("\n"), {
+        position: "bottom-right",
+        duration: 2000
+      });
+      return;
+    }
+    createProductMutation.mutate();
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = Number(value);
+    setFormData(prev => ({ ...prev, [name]: numValue }));
   };
 
   return (
@@ -142,6 +315,17 @@ const AddProductForm = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="subcategory">Sub-Category</Label>
+                <Input
+                  id="subcategory"
+                  name="subcategory"
+                  value={formData.subcategory}
+                  onChange={handleInputChange}
+                  placeholder="Enter sub-category"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -155,55 +339,15 @@ const AddProductForm = () => {
 
             {/* Images and Media */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Images and Media</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="base_img_url">Base Image</Label>
-                  <Input
-                    id="base_img_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "base_img_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img1_url">Secondary Image 1</Label>
-                  <Input
-                    id="sec_img1_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img1_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img2_url">Secondary Image 2</Label>
-                  <Input
-                    id="sec_img2_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img2_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img3_url">Secondary Image 3</Label>
-                  <Input
-                    id="sec_img3_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img3_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="product_vid_url">Product Video</Label>
-                  <Input
-                    id="product_vid_url"
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => handleFileChange(e, "product_vid_url")}
-                  />
-                </div>
-              </div>
-            </div>
+          <h3 className="text-lg font-medium">Images and Media</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {renderFileInput("base_img_url", "Base Image", "image/*")}
+            {renderFileInput("sec_img1_url", "Secondary Image 1", "image/*")}
+            {renderFileInput("sec_img2_url", "Secondary Image 2", "image/*")}
+            {renderFileInput("sec_img3_url", "Secondary Image 3", "image/*")}
+            {renderFileInput("product_vid_url", "Product Video", "video/*")}
+          </div>
+        </div>
 
             {/* Physical Properties */}
             <div className="space-y-4">
@@ -243,7 +387,7 @@ const AddProductForm = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="length">Length</Label>
+                  <Label htmlFor="length">Length (cm)</Label>
                   <Input
                     id="length"
                     name="length"
@@ -253,7 +397,7 @@ const AddProductForm = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="width">Width</Label>
+                  <Label htmlFor="width">Width (cm)</Label>
                   <Input
                     id="width"
                     name="width"
@@ -269,35 +413,26 @@ const AddProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Characteristics</h3>
               <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
+              <div className="space-y-2">
                   <Label htmlFor="shape">Shape</Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("shape", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shape" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Oval">Oval</SelectItem>
-                      <SelectItem value="Round">Round</SelectItem>
-                      <SelectItem value="Cushion">Cushion</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="shape"
+                    name="shape"
+                    value={formData.shape}
+                    onChange={handleInputChange}
+                    placeholder="Enter shape"
+                  />
                 </div>
+                {/* Changed cut to text input */}
                 <div className="space-y-2">
                   <Label htmlFor="cut">Cut</Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("cut", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mixed">Mixed</SelectItem>
-                      <SelectItem value="Brilliant">Brilliant</SelectItem>
-                      <SelectItem value="Step">Step</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="cut"
+                    name="cut"
+                    value={formData.cut}
+                    onChange={handleInputChange}
+                    placeholder="Enter cut"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="color">Color</Label>
@@ -342,26 +477,30 @@ const AddProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Pricing</h3>
               <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="actual_price">Actual Price</Label>
+                <Input
+                  id="actual_price"
+                  name="actual_price"
+                  type="number"
+                  value={formData.actual_price}
+                  onChange={handlePriceChange}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
                 <div className="space-y-2">
-                  <Label htmlFor="actual_price">Actual Price</Label>
-                  <Input
-                    id="actual_price"
-                    name="actual_price"
-                    type="number"
-                    value={formData.actual_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sale_price">Sale Price</Label>
-                  <Input
-                    id="sale_price"
-                    name="sale_price"
-                    type="number"
-                    value={formData.sale_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
+                <Label htmlFor="sale_price">Sale Price</Label>
+                <Input
+                  id="sale_price"
+                  name="sale_price"
+                  type="number"
+                  value={formData.sale_price}
+                  onChange={handlePriceChange}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity</Label>
                   <Input
@@ -375,7 +514,10 @@ const AddProductForm = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button 
+              type="submit" 
+              className="w-full"
+            >
               Add Product
             </Button>
           </form>
