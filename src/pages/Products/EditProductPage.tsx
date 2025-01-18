@@ -19,10 +19,17 @@ import { useSelector } from "react-redux";
 import { X } from "lucide-react";
 import { useQueryClient } from 'react-query';
 
+type ImageFieldName = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_img3_url' | 'product_vid_url';
+
+type RemovedImages = {
+  [key in ImageFieldName]: boolean;
+};
+
 
 // Reuse the same interface from AddProductForm
 interface ProductFormData {
   // Product fields
+  [key: string]: any;
   base_img_url: File | null;
   sec_img1_url: File | null;
   sec_img2_url: File | null;
@@ -59,14 +66,11 @@ interface ProductFormData {
     product_vid_url: string | null;
   };
 
-  removedImages: {
-    base_img_url: boolean;
-    sec_img1_url: boolean;
-    sec_img2_url: boolean;
-    sec_img3_url: boolean;
-    product_vid_url: boolean;
-  };
+  removedImages: RemovedImages;
+  
 }
+
+
 
 interface FilePreviewProps {
   file: File | null;
@@ -75,16 +79,33 @@ interface FilePreviewProps {
 }
 
 
+
+interface ApiError {
+  message: string;
+  response?: {
+    data: any;
+    status: number;
+  };
+}
+
+
 // Reuse the FilePreview component from AddProductForm
 const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }) => {
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
+    let objectUrl: string | null = null;
+    
     if (file) {
-      const objectUrl = URL.createObjectURL(file);
+      objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
     }
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
   }, [file]);
 
   if (!preview && !existingUrl) return null;
@@ -200,7 +221,7 @@ const EditProductForm = () => {
           ...prev,
           // Product fields
           name: product.name,
-          description: product.description === "null" ? "" : product.description,
+          description: formData.description || undefined ? "" : product.description,
           category: product.category,
           subcategory: product.subcategory,
           quantity: product.quantity,
@@ -247,60 +268,70 @@ const EditProductForm = () => {
     }
   );
   // Update mutation
-  const updateProductMutation = useMutation({
-    mutationFn: async (formDataToSend: FormData) => {
-      if (!token) throw new Error('Authentication token is missing');
-  
-      try {
-        // Log the FormData contents before sending
-        console.log("Sending FormData contents:");
-        for (const pair of formDataToSend.entries()) {
-          console.log(`${pair[0]}: ${pair[1]}`);
+ // Update mutation
+const updateProductMutation = useMutation({
+  mutationFn: async (formDataToSend: FormData) => {
+    if (!token) throw new Error('Authentication token is missing');
+
+    try {
+      const response = await userRequest({
+        url: `/product/update-product/${id}`,
+        method: "PUT",
+        data: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${token}`,
         }
-  
-        const response = await userRequest({
-          url: `/product/update-product/${id}`,
-          method: "PUT",
-          data: formDataToSend,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        });
-  
-        return response.data;
-      } catch (error) {
-        console.error("Update error details:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
-        });
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      console.log("Update successful:", data);
-      toast.success("Product updated successfully!", {
-        position: "bottom-right",
-        duration: 2000
       });
-      queryClient.invalidateQueries(["get-product", id]);
-    },
-    onError: (error: Error) => {
-      console.error("Mutation error:", error);
-      toast.error(error.message, {
+
+      return response.data;
+    } catch (error) {
+      throw error as ApiError;
+    }
+  },
+  onSuccess: (data) => {
+    // Show success message
+    toast.success("Product updated successfully!", {
+      position: "bottom-right",
+      duration: 2000,
+      // You can add a custom icon if desired
+      // icon: "✨"
+    });
+
+    // Invalidate and refetch relevant queries to update the UI
+    queryClient.invalidateQueries(["get-product", id]);
+    
+    // You can also add another toast to confirm specific updates
+    if (Object.values(formData.removedImages).some(removed => removed)) {
+      toast.success("Images updated successfully", {
         position: "bottom-right",
-        duration: 2000
+        duration: 2000,
+        // Add slight delay to prevent toast overlap
+        // delay: 500
       });
     }
-  });
-
+  },
+  onError: (error: ApiError) => {
+    console.error("Mutation error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    const errorMessage = error.response?.data?.message || error.message || "Failed to update product";
+    toast.error(errorMessage, {
+      position: "bottom-right",
+      duration: 2000
+    });
+  }
+});
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    const isNumberField = e.target.type === 'number';
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: isNumberField ? Number(value) || 0 : value,
     }));
   };
 
@@ -332,26 +363,21 @@ const EditProductForm = () => {
   };
 
 
-  const handleFileRemove = (fieldName: keyof ProductFormData) => {
+  const handleFileRemove = (fieldName: ImageFieldName) => {
     console.log(`Removing file for field: ${fieldName}`);
     
-    setFormData(prev => {
-      const updatedData = {
-        ...prev,
-        [fieldName]: null,
-        existingImages: {
-          ...prev.existingImages,
-          [fieldName]: null
-        },
-        removedImages: {
-          ...prev.removedImages,
-          [fieldName]: true
-        }
-      };
-      
-      console.log('Updated form data after removal:', updatedData);
-      return updatedData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: null,
+      existingImages: {
+        ...prev.existingImages,
+        [fieldName]: null
+      },
+      removedImages: {
+        ...prev.removedImages,
+        [fieldName]: true
+      }
+    }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -370,6 +396,38 @@ const EditProductForm = () => {
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
     
+    // Prepare product data
+    const productData: Partial<ProductFormData> = {
+      name: formData.name,
+      description: formData.description || undefined,
+      category: formData.category,
+      subcategory: formData.subcategory,
+      quantity: Number(formData.quantity),
+      actual_price: Number(formData.actual_price),
+      sale_price: Number(formData.sale_price)
+    };
+  
+    // Prepare attribute data
+    const attributeData = {
+      origin: formData.origin,
+      weight_gms: Number(formData.weight_gms),
+      weight_carat: Number(formData.weight_carat),
+      weight_ratti: Number(formData.weight_ratti),
+      length: Number(formData.length),
+      width: Number(formData.width),
+      shape: formData.shape,
+      cut: formData.cut,
+      treatment: formData.treatment,
+      composition: formData.composition,
+      certification: formData.certification,
+      color: formData.color
+    };
+  
+    // Append stringified data
+    formDataToSend.append('productData', JSON.stringify(productData));
+    formDataToSend.append('attributeData', JSON.stringify(attributeData));
+  
+    // Handle file uploads
     const fileFieldMappings = {
       'base_img_url': 'base_img',
       'sec_img1_url': 'sec_img1',
@@ -378,24 +436,13 @@ const EditProductForm = () => {
       'product_vid_url': 'product_video'
     };
   
-    console.log('Current form data:', formData);
-    console.log('Removed images status:', formData.removedImages);
-  
     Object.entries(fileFieldMappings).forEach(([fieldName, serverFieldName]) => {
       if (formData[fieldName]) {
         formDataToSend.append(serverFieldName, formData[fieldName]);
-        console.log(`Appending new file: ${serverFieldName}`);
-      } else if (formData.removedImages[fieldName]) {
+      } else if (formData.removedImages[fieldName as ImageFieldName]) {
         formDataToSend.append(`${serverFieldName}_remove`, 'true');
-        console.log(`Marking for removal: ${serverFieldName}`);
       }
     });
-  
-    // Log all form data being sent
-    console.log('Final form data entries:');
-    for (const pair of formDataToSend.entries()) {
-      console.log(`${pair[0]}: ${pair[1]}`);
-    }
   
     return formDataToSend;
   };
@@ -403,21 +450,40 @@ const EditProductForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationErrors = validateProduct(formData);
-    if (validationErrors.length > 0) {
-      toast.error(validationErrors.join("\n"), {
-        position: "bottom-right",
-        duration: 2000
-      });
-      return;
-    }
-
+    // Show loading toast while validating
+    // const loadingToast = toast.loading("Validating form...", {
+    //   // position: "bottom-right"
+    // });
+    
+    // const validationErrors = validateProduct(formData);
+    // if (validationErrors.length > 0) {
+    //   // Dismiss loading toast
+    //   toast.dismiss(loadingToast);
+      
+    //   // Show validation errors
+    //   toast.error(validationErrors.join("\n"), {
+    //     position: "bottom-right",
+    //     duration: 2000
+    //   });
+    //   return;
+    // }
+  
+    // Dismiss loading toast
+    // toast.dismiss(loadingToast);
+  
+    // Show processing toast
+    // toast.loading("Updating product...", {
+    //   position: "bottom-right"
+    // });
+  
     const formDataToSend = createFormDataWithFiles();
     updateProductMutation.mutate(formDataToSend);
   };
 
-  const renderFileInput = (fieldName: string, label: string) => {
-    // Determine accept attribute based on field name
+  const renderFileInput = (
+    fieldName: keyof Pick<ProductFormData, 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_img3_url' | 'product_vid_url'>,
+    label: string
+  ) => {
     const accept = fieldName === 'product_vid_url' ? 'video/*' : 'image/*';
     
     return (
@@ -440,7 +506,6 @@ const EditProductForm = () => {
       </div>
     );
   };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-6">
@@ -515,11 +580,11 @@ const EditProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Images and Media</h3>
               <div className="grid grid-cols-2 gap-4">
-                {renderFileInput("base_img_url", "Base Image", "image/*")}
-                {renderFileInput("sec_img1_url", "Secondary Image 1", "image/*")}
-                {renderFileInput("sec_img2_url", "Secondary Image 2", "image/*")}
-                {renderFileInput("sec_img3_url", "Secondary Image 3", "image/*")}
-                {renderFileInput("product_vid_url", "Product Video", "video/*")}
+              {renderFileInput("base_img_url", "Base Image")}
+                {renderFileInput("sec_img1_url", "Secondary Image 1")}
+                {renderFileInput("sec_img2_url", "Secondary Image 2")}
+                {renderFileInput("sec_img3_url", "Secondary Image 3")}
+                {renderFileInput("product_vid_url", "Product Video")}
               </div>
             </div>
 
