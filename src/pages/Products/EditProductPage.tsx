@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -235,6 +236,7 @@ const EditProductForm = () => {
           sec_img1_url: null,
           sec_img2_url: null,
           sec_img3_url: null,
+
           product_vid_url: null,
         }));
       },
@@ -439,18 +441,19 @@ const EditProductForm = () => {
         </div>
       </div>
     );
+
   };
 
-  if (isLoading) {
+  if (loadingProduct)
     return (
-      <div className="flex items-center justify-center p-6">
-        <div className="text-lg">Loading product data...</div>
+      <div className="flex justify-center items-center h-screen">
+        <ClipLoader color="blue" size={50} />
       </div>
     );
-  }
 
 
   return (
+
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
@@ -708,6 +711,7 @@ const EditProductForm = () => {
           </form>
         </CardContent>
       </Card>
+
     </div>
   );
 };
