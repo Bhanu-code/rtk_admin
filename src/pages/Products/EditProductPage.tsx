@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { X } from "lucide-react";
 import { useQueryClient } from 'react-query';
+import { ClipLoader } from "react-spinners";
 
 type ImageFieldName = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_img3_url' | 'product_vid_url';
 
@@ -206,7 +208,7 @@ const EditProductForm = () => {
   const queryClient = useQueryClient();
 
   // Fetch product data
-  const { data: productDetails, isLoading } = useQuery(
+  const { data: productDetails, isLoading:loadingProduct } = useQuery(
     ["get-product", id],
     () => userRequest({
       url: `/product/get-product/${id}`,
@@ -256,6 +258,7 @@ const EditProductForm = () => {
           sec_img1_url: null,
           sec_img2_url: null,
           sec_img3_url: null,
+
           product_vid_url: null,
         }));
       },
@@ -505,17 +508,19 @@ const updateProductMutation = useMutation({
         </div>
       </div>
     );
+
   };
-  if (isLoading) {
+
+  if (loadingProduct)
     return (
-      <div className="flex items-center justify-center p-6">
-        <div className="text-lg">Loading product data...</div>
+      <div className="flex justify-center items-center h-screen">
+        <ClipLoader color="blue" size={50} />
       </div>
     );
-  }
 
 
   return (
+
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader>
@@ -773,6 +778,7 @@ const updateProductMutation = useMutation({
           </form>
         </CardContent>
       </Card>
+
     </div>
   );
 };

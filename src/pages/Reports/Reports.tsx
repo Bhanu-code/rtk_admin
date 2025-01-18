@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+// import  { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Download, Calendar, Filter } from 'lucide-react';
@@ -32,7 +32,7 @@ const Reports = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   // State for time period filter
-  const [timePeriod, setTimePeriod] = useState('6months');
+  // const [timePeriod, setTimePeriod] = useState('6months');
 
   return (
     <div className="mb-10 p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -101,7 +101,7 @@ const Reports = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {categoryData.map((entry, index) => (
+                    {categoryData.map((index:any) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>

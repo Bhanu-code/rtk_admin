@@ -3,10 +3,10 @@ export const tabs = [
         tab_name: "Dashboard",
         link: "/home/dashboard"
     },
-    {
-        tab_name: "Orders",
-        link: "/home/orders"
-    },
+    // {
+    //     tab_name: "Orders",
+    //     link: "/home/orders"
+    // },
     {
         tab_name: "Products",
         link: "/home/products"
