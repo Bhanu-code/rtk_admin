@@ -36,7 +36,7 @@ const GemDetails = () => {
     });
   };
 
-  const { data, isLoading:gemDataLoading } = useQuery("get-gem-details", getGemDetails, {
+  const { data } = useQuery("get-gem-details", getGemDetails, {
     onSuccess: () => {
       console.log(data);
     },

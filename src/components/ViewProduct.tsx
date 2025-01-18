@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { userRequest } from '@/utils/requestMethods';
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from 'react-query';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery } from 'react-query';
 import { Button } from "./ui/button";
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import ConfirmDelete from "./ConfirmDelete";
+import { toast } from "sonner";
 
 const ViewProduct = () => {
   const { id } = useParams();
@@ -50,6 +52,36 @@ const ViewProduct = () => {
     })
   );
 
+  const navigateTo = useNavigate()
+
+  const deleteProductMethod = () => {
+    return userRequest({
+      url: `/product/delete-product/${id}`,
+      method: "delete",
+    });
+  }
+
+    const { mutate: deleteProduct, isLoading: isDeleting } = useMutation(
+      "delete-product",
+      deleteProductMethod,
+      {
+        onSuccess: (response: any) => {
+          if (response?.status !== 200) {
+            toast.error("Error Deletig!", {
+              position: "bottom-right",
+              duration: 2000,
+            });
+            return;
+          }
+          toast.success("Deleted!", { position: "bottom-right", duration: 2000 });
+          navigateTo("/home/products");
+        },
+        onError: (error: any) => {
+          console.log(error);
+        },
+      }
+    );
+
   // Image component with error handling
   const ProductImage = ({ src, alt, className }) => (
     <div 
@@ -73,6 +105,10 @@ const ViewProduct = () => {
       )}
     </div>
   );
+
+
+   
+    
 
   return (
     <div className="container mx-auto mb-10 p-6">
@@ -134,14 +170,17 @@ const ViewProduct = () => {
                 <ProductImage 
                   src={product?.data?.product?.sec_img1_url} 
                   alt="Secondary Image 1" 
+                  className={""}
                 />
                 <ProductImage 
                   src={product?.data?.product?.sec_img2_url} 
                   alt="Secondary Image 2" 
+                  className={""}
                 />
                 <ProductImage 
                   src={product?.data?.product?.sec_img3_url} 
                   alt="Secondary Image 3" 
+                  className={""}
                 />
               </div>
               
@@ -253,6 +292,11 @@ const ViewProduct = () => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="danger-zone my-5">
+       { isDeleting ? <span className="text-red-500">Deleting...</span> : <ConfirmDelete onConfirm={deleteProduct} /> }
+      </div>
+
     </div>
   );
 };
