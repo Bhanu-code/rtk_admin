@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,22 +13,30 @@ import {
 } from "@/components/ui/select";
 import { useParams } from "react-router-dom";
 import { userRequest } from "@/utils/requestMethods";
-import { useQuery } from "react-query";
+import { useMutation, useQuery } from "react-query";
+import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import { X } from "lucide-react";
+import { useQueryClient } from 'react-query';
 
+
+// Reuse the same interface from AddProductForm
 interface ProductFormData {
+  // Product fields
   base_img_url: File | null;
   sec_img1_url: File | null;
   sec_img2_url: File | null;
   sec_img3_url: File | null;
   product_vid_url: File | null;
-  cert_img_url: string;
   name: string;
-  description: string | null;
+  description: string;
   category: string;
   subcategory: string;
   quantity: number;
   actual_price: number;
   sale_price: number;
+  cert_img_url:string
+  // Attribute fields
   origin: string;
   weight_gms: number;
   weight_carat: number;
@@ -41,18 +49,98 @@ interface ProductFormData {
   composition: string;
   certification: string;
   color: string;
+
+  // Additional fields
+  existingImages: {
+    base_img_url: string | null;
+    sec_img1_url: string | null;
+    sec_img2_url: string | null;
+    sec_img3_url: string | null;
+    product_vid_url: string | null;
+  };
+
+  removedImages: {
+    base_img_url: boolean;
+    sec_img1_url: boolean;
+    sec_img2_url: boolean;
+    sec_img3_url: boolean;
+    product_vid_url: boolean;
+  };
 }
 
-// interface EditProductFormProps {
-//   productId: string;
-//   onSuccess?: () => void;
-// }
+interface FilePreviewProps {
+  file: File | null;
+  existingUrl: string | null;
+  onRemove: () => void;
+}
 
-const EditProductPage = () => {
-    const { id } = useParams()
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [formData, setFormData] = React.useState<ProductFormData>({
+// Reuse the FilePreview component from AddProductForm
+const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }) => {
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (file) {
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+  }, [file]);
+
+  if (!preview && !existingUrl) return null;
+
+  const isImage = file ? file.type.startsWith('image/') : existingUrl?.match(/\.(jpg|jpeg|png|gif)$/i);
+  const displayUrl = preview || existingUrl;
+
+  return (
+    <div className="relative">
+      {isImage ? (
+        <img 
+          src={displayUrl || ''} 
+          alt="Preview" 
+          className="w-full h-32 object-contain rounded-md"
+        />
+      ) : displayUrl && (
+        <video 
+          src={displayUrl} 
+          className="w-full h-32 object-contain rounded-md" 
+          controls
+        />
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+// Reuse the validation function from AddProductForm
+const validateProduct = (formData: ProductFormData) => {
+  const errors: string[] = [];
+
+  if (!formData.category) {
+    errors.push("Category cannot be null");
+  }
+  if (formData.actual_price < 0 || formData.sale_price < 0) {
+    errors.push("Negative Price not allowed!");
+  }
+  if (!formData.actual_price && formData.sale_price) {
+    errors.push("Actual Price cannot be null!");
+  }
+  if (formData.sale_price <= formData.actual_price) {
+    errors.push("Sale Price cannot be less than Actual Price!");
+  }
+
+  return errors;
+};
+
+const EditProductForm = () => {
+  const { id } = useParams();
+  const token = useSelector((state: any) => state.user.accessToken);
+  const [formData, setFormData] = useState<ProductFormData>({
     base_img_url: null,
     sec_img1_url: null,
     sec_img2_url: null,
@@ -60,7 +148,7 @@ const EditProductPage = () => {
     product_vid_url: null,
     cert_img_url: "",
     name: "",
-    description: null,
+    description: "",
     category: "",
     subcategory: "",
     quantity: 1,
@@ -78,39 +166,133 @@ const EditProductPage = () => {
     composition: "",
     certification: "",
     color: "",
+    existingImages: {
+      base_img_url: '',
+      sec_img1_url: '',
+      sec_img2_url: '',
+      sec_img3_url: '',
+      product_vid_url: '',
+    },
+    removedImages: {
+      base_img_url: false,
+      sec_img1_url: false,
+      sec_img2_url: false,
+      sec_img3_url: false,
+      product_vid_url: false,
+    }
   });
 
-  // Fetch existing product data
-  React.useEffect(() => {
-    const fetchProductData = async () => {
-      try {
-        setIsLoading(true);
-        // Replace with your actual API call
-        const response = await fetch(`/api/products/${id}`);
-        const data = await response.json();
+  const queryClient = useQueryClient();
 
-        // Update form data with existing product data
-        setFormData((prevData) => ({
-          ...prevData,
-          ...data,
-          // Reset file fields since we can't populate them directly
+  // Fetch product data
+  const { data: productDetails, isLoading } = useQuery(
+    ["get-product", id],
+    () => userRequest({
+      url: `/product/get-product/${id}`,
+      method: "get",
+    }),
+    {
+      onSuccess: (response) => {
+        const { product, attribute } = response.data;
+        
+        // Combine product and attribute data
+        setFormData(prev => ({
+          ...prev,
+          // Product fields
+          name: product.name,
+          description: product.description === "null" ? "" : product.description,
+          category: product.category,
+          subcategory: product.subcategory,
+          quantity: product.quantity,
+          actual_price: product.actual_price,
+          sale_price: product.sale_price,
+          
+          // Attribute fields
+          origin: attribute.origin,
+          weight_gms: attribute.weight_gms,
+          weight_carat: attribute.weight_carat,
+          weight_ratti: attribute.weight_ratti,
+          length: attribute.length,
+          width: attribute.width,
+          shape: attribute.shape,
+          cut: attribute.cut,
+          treatment: attribute.treatment,
+          composition: attribute.composition,
+          certification: attribute.certification,
+          color: attribute.color,
+
+          // Store existing image URLs
+          existingImages: {
+            base_img_url: product.base_img_url,
+            sec_img1_url: product.sec_img1_url,
+            sec_img2_url: product.sec_img2_url,
+            sec_img3_url: product.sec_img3_url,
+            product_vid_url: product.product_vid_url,
+          },
+
+          // Reset file fields
           base_img_url: null,
           sec_img1_url: null,
           sec_img2_url: null,
           sec_img3_url: null,
           product_vid_url: null,
         }));
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchProductData();
+      },
+      onError: (error: any) => {
+        toast.error("Failed to fetch product details", {
+          position: "bottom-right",
+          duration: 2000
+        });
+      },
     }
-  }, [id]);
+  );
+  // Update mutation
+  const updateProductMutation = useMutation({
+    mutationFn: async (formDataToSend: FormData) => {
+      if (!token) throw new Error('Authentication token is missing');
+  
+      try {
+        // Log the FormData contents before sending
+        console.log("Sending FormData contents:");
+        for (const pair of formDataToSend.entries()) {
+          console.log(`${pair[0]}: ${pair[1]}`);
+        }
+  
+        const response = await userRequest({
+          url: `/product/update-product/${id}`,
+          method: "PUT",
+          data: formDataToSend,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+  
+        return response.data;
+      } catch (error) {
+        console.error("Update error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log("Update successful:", data);
+      toast.success("Product updated successfully!", {
+        position: "bottom-right",
+        duration: 2000
+      });
+      queryClient.invalidateQueries(["get-product", id]);
+    },
+    onError: (error: Error) => {
+      console.error("Mutation error:", error);
+      toast.error(error.message, {
+        position: "bottom-right",
+        duration: 2000
+      });
+    }
+  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -127,11 +309,49 @@ const EditProductPage = () => {
     fieldName: keyof ProductFormData
   ) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({
+      const file = e.target.files[0];
+      
+      // Validate file type for sec_img3_url
+      if (fieldName === 'sec_img3_url' && !file.type.startsWith('image/')) {
+        toast.error('Please select an image file for Secondary Image 3', {
+          position: "bottom-right",
+          duration: 2000
+        });
+        return;
+      }
+
+      setFormData(prev => ({
         ...prev,
-        [fieldName]: e.target?.files?.[0],
+        [fieldName]: file,
+        removedImages: {
+          ...prev.removedImages,
+          [fieldName]: false // Reset removed status when new file is added
+        }
       }));
     }
+  };
+
+
+  const handleFileRemove = (fieldName: keyof ProductFormData) => {
+    console.log(`Removing file for field: ${fieldName}`);
+    
+    setFormData(prev => {
+      const updatedData = {
+        ...prev,
+        [fieldName]: null,
+        existingImages: {
+          ...prev.existingImages,
+          [fieldName]: null
+        },
+        removedImages: {
+          ...prev.removedImages,
+          [fieldName]: true
+        }
+      };
+      
+      console.log('Updated form data after removal:', updatedData);
+      return updatedData;
+    });
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -141,44 +361,84 @@ const EditProductPage = () => {
     }));
   };
 
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = Number(value);
+    setFormData(prev => ({ ...prev, [name]: numValue }));
+  };
+
+  const createFormDataWithFiles = () => {
+    const formDataToSend = new FormData();
+    
+    const fileFieldMappings = {
+      'base_img_url': 'base_img',
+      'sec_img1_url': 'sec_img1',
+      'sec_img2_url': 'sec_img2',
+      'sec_img3_url': 'sec_img3',
+      'product_vid_url': 'product_video'
+    };
+  
+    console.log('Current form data:', formData);
+    console.log('Removed images status:', formData.removedImages);
+  
+    Object.entries(fileFieldMappings).forEach(([fieldName, serverFieldName]) => {
+      if (formData[fieldName]) {
+        formDataToSend.append(serverFieldName, formData[fieldName]);
+        console.log(`Appending new file: ${serverFieldName}`);
+      } else if (formData.removedImages[fieldName]) {
+        formDataToSend.append(`${serverFieldName}_remove`, 'true');
+        console.log(`Marking for removal: ${serverFieldName}`);
+      }
+    });
+  
+    // Log all form data being sent
+    console.log('Final form data entries:');
+    for (const pair of formDataToSend.entries()) {
+      console.log(`${pair[0]}: ${pair[1]}`);
+    }
+  
+    return formDataToSend;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      // Create FormData for handling file uploads
-      const formDataToSend = new FormData();
-
-      // Append all non-file fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formDataToSend.append(key, value);
-        } else if (value !== null) {
-          formDataToSend.append(key, String(value));
-        }
+    
+    const validationErrors = validateProduct(formData);
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors.join("\n"), {
+        position: "bottom-right",
+        duration: 2000
       });
-
-     const getProductDetialsMethod = () => {
-         return userRequest({
-           url: `/product/get-product/${id}`,
-           method: "get",
-         });
-       };
-     
-       const { data:productDetails } = useQuery("get-gem-details", getProductDetialsMethod, {
-         onSuccess: () => {
-           console.log(productDetails);
-         },
-         onError: (error: any) => {
-           console.log(error);
-         },
-       });
-
-      
-
-    //   onSuccess?.();
-    } catch (error) {
-      console.error("Error updating product:", error);
+      return;
     }
+
+    const formDataToSend = createFormDataWithFiles();
+    updateProductMutation.mutate(formDataToSend);
+  };
+
+  const renderFileInput = (fieldName: string, label: string) => {
+    // Determine accept attribute based on field name
+    const accept = fieldName === 'product_vid_url' ? 'video/*' : 'image/*';
+    
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={fieldName}>{label}</Label>
+        <div className="space-y-2">
+          <Input
+            id={fieldName}
+            type="file"
+            accept={accept}
+            onChange={(e) => handleFileChange(e, fieldName)}
+            className="mb-2"
+          />
+          <FilePreview
+            file={formData[fieldName]}
+            existingUrl={formData.existingImages[fieldName]}
+            onRemove={() => handleFileRemove(fieldName)}
+          />
+        </div>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -188,6 +448,7 @@ const EditProductPage = () => {
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto p-6">
@@ -213,10 +474,8 @@ const EditProductPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select
+                    onValueChange={(value) => handleSelectChange("category", value)}
                     value={formData.category}
-                    onValueChange={(value) =>
-                      handleSelectChange("category", value)
-                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -227,6 +486,17 @@ const EditProductPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subcategory">Sub-Category</Label>
+                <Input
+                  id="subcategory"
+                  name="subcategory"
+                  value={formData.subcategory}
+                  onChange={handleInputChange}
+                  placeholder="Enter sub-category"
+                />
               </div>
 
               <div className="space-y-2">
@@ -245,53 +515,14 @@ const EditProductPage = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Images and Media</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="base_img_url">Base Image</Label>
-                  <Input
-                    id="base_img_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "base_img_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img1_url">Secondary Image 1</Label>
-                  <Input
-                    id="sec_img1_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img1_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img2_url">Secondary Image 2</Label>
-                  <Input
-                    id="sec_img2_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img2_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img3_url">Secondary Image 3</Label>
-                  <Input
-                    id="sec_img3_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img3_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="product_vid_url">Product Video</Label>
-                  <Input
-                    id="product_vid_url"
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => handleFileChange(e, "product_vid_url")}
-                  />
-                </div>
+                {renderFileInput("base_img_url", "Base Image", "image/*")}
+                {renderFileInput("sec_img1_url", "Secondary Image 1", "image/*")}
+                {renderFileInput("sec_img2_url", "Secondary Image 2", "image/*")}
+                {renderFileInput("sec_img3_url", "Secondary Image 3", "image/*")}
+                {renderFileInput("product_vid_url", "Product Video", "video/*")}
               </div>
             </div>
+
 
             {/* Physical Properties */}
             <div className="space-y-4">
@@ -467,8 +698,12 @@ const EditProductPage = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
-              Update Product
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={updateProductMutation.isLoading}
+            >
+              {updateProductMutation.isLoading ? "Updating..." : "Update Product"}
             </Button>
           </form>
         </CardContent>
@@ -477,4 +712,4 @@ const EditProductPage = () => {
   );
 };
 
-export default EditProductPage;
+export default EditProductForm;
