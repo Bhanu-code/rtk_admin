@@ -46,7 +46,7 @@ interface ProductFormData {
   color: string;
 }
 
-const FilePreview = ({ file, onRemove }) => {
+const FilePreview = ({ file, onRemove }:any) => {
   const [preview, setPreview] = useState(null);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const FilePreview = ({ file, onRemove }) => {
     }
 
     // Create preview URL
-    const objectUrl = URL.createObjectURL(file);
+    const objectUrl:any = URL.createObjectURL(file);
     setPreview(objectUrl);
 
     // Cleanup
@@ -232,7 +232,7 @@ const AddProductForm = () => {
     }
   });
 
-  const renderFileInput = (fieldName, label, accept) => (
+  const renderFileInput = (fieldName:any, label:any, accept:any) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName}>{label}</Label>
       <div className="space-y-2">
@@ -251,7 +251,7 @@ const AddProductForm = () => {
     </div>
   );
 
-  const handleFileRemove = (fieldName) => {
+  const handleFileRemove = (fieldName:any) => {
     setFormData(prev => ({
       ...prev,
       [fieldName]: null

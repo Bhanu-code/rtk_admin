@@ -2,7 +2,7 @@ import { createContext } from "react";
 import "./App.css";
 import { useSelector } from "react-redux";
 import { useState } from "react";
-import { createBrowserRouter, Outlet, redirect, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login/Login";

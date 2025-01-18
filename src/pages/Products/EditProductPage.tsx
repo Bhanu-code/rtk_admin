@@ -1,480 +1,206 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useParams } from "react-router-dom";
+import { useState } from "react";
+import { useFormik } from "formik";
+import { useMutation, useQuery } from "react-query";
+import { toast } from "sonner";
+import ClipLoader from "react-spinners/ClipLoader";
 import { userRequest } from "@/utils/requestMethods";
-import { useQuery } from "react-query";
+import { useParams } from "react-router-dom";
 
-interface ProductFormData {
-  base_img_url: File | null;
-  sec_img1_url: File | null;
-  sec_img2_url: File | null;
-  sec_img3_url: File | null;
-  product_vid_url: File | null;
-  cert_img_url: string;
-  name: string;
-  description: string | null;
-  category: string;
-  subcategory: string;
-  quantity: number;
-  actual_price: number;
-  sale_price: number;
-  origin: string;
-  weight_gms: number;
-  weight_carat: number;
-  weight_ratti: number;
-  length: number;
-  width: number;
-  shape: string;
-  cut: string;
-  treatment: string;
-  composition: string;
-  certification: string;
-  color: string;
-}
+const EditProductForm = () => {
+  const [filePreviews, setFilePreviews] = useState({});
+  const { id } = useParams();
 
-// interface EditProductFormProps {
-//   productId: string;
-//   onSuccess?: () => void;
-// }
-
-const EditProductPage = () => {
-    const { id } = useParams()
-
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [formData, setFormData] = React.useState<ProductFormData>({
-    base_img_url: null,
-    sec_img1_url: null,
-    sec_img2_url: null,
-    sec_img3_url: null,
-    product_vid_url: null,
-    cert_img_url: "",
-    name: "",
-    description: null,
-    category: "",
-    subcategory: "",
-    quantity: 1,
-    actual_price: 0,
-    sale_price: 0,
-    origin: "",
-    weight_gms: 0,
-    weight_carat: 0,
-    weight_ratti: 0,
-    length: 0,
-    width: 0,
-    shape: "",
-    cut: "",
-    treatment: "",
-    composition: "",
-    certification: "",
-    color: "",
+  const formik = useFormik({
+    initialValues: {
+      category: "",
+      name: "",
+      description: "",
+      actual_price: 0,
+      sale_price: 0,
+      physical_properties: "",
+      base_img_url: null,
+      sec_img1_url: null,
+      sec_img2_url: null,
+      sec_img3_url: null,
+    },
+    validate: (values) => {
+      const errors = {
+        category: "",
+        name: "",
+        actual_price: "",
+        sale_price: "",
+      };
+      if (!values.category) errors.category = "Category is required";
+      if (!values.name) errors.name = "Product name is required";
+      if (!values.actual_price || values.actual_price < 0) {
+        errors.actual_price = "Actual price must be a positive number";
+      }
+      if (values.sale_price < 0) {
+        errors.sale_price = "Offer price cannot be negative";
+      }
+      return errors;
+    },
+    onSubmit: async (values:any) => {
+      const formData:any = new FormData();
+      for (const key in values) {
+        if (values[key] instanceof File) {
+          formData.append(key, values[key]);
+        } else {
+          formData.append(key, values[key]);
+        }
+      }
+      updateProductMutation.mutate(formData);
+    },
   });
 
-  // Fetch existing product data
-  React.useEffect(() => {
-    const fetchProductData = async () => {
-      try {
-        setIsLoading(true);
-        // Replace with your actual API call
-        const response = await fetch(`/api/products/${id}`);
-        const data = await response.json();
+  const getProductById = () => {
+    return userRequest({
+      url: `/product/get-product/${id}`,
+      method: "get",
+    });
+  };
 
-        // Update form data with existing product data
-        setFormData((prevData) => ({
-          ...prevData,
-          ...data,
-          // Reset file fields since we can't populate them directly
+  const updateProduct = () => {
+    return userRequest({
+      url: `/product/update-product/${id}`,
+      method: "put",
+      data: formik.values
+    });
+  };
+
+  const { isLoading: loadingProduct, data } = useQuery(
+    "get-product-by-id",
+    getProductById,
+    {
+      onSuccess: () => {
+        formik.setValues({
+          category: data.data.product.category,
+          name: data.data.product.name,
+          description: data.data.product.description,
+          actual_price: data.data.product.actual_price,
+          offer_price: data.data.product.offer_price,
+          physical_properties: data.data.product.physical_properties,
           base_img_url: null,
           sec_img1_url: null,
           sec_img2_url: null,
           sec_img3_url: null,
-          product_vid_url: null,
-        }));
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchProductData();
+        });
+        setFilePreviews({
+          base_img_url: data.data.product.base_img_url,
+          sec_img1_url: data.data.product.sec_img1_url,
+          sec_img2_url: data.data.product.sec_img2_url,
+          sec_img3_url: data.data.product.sec_img3_url,
+        });
+      },
     }
-  }, [id]);
+  );
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const updateProductMutation = useMutation("update-product", updateProduct, {
+    onSuccess: () => {
+      toast.success("Product updated successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to update product. Please try again.");
+    },
+  });
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldName: keyof ProductFormData
-  ) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({
-        ...prev,
-        [fieldName]: e.target?.files?.[0],
-      }));
+  const handleFileChange = (event:any, field:any) => {
+    const file = event.target.files[0];
+    if (file) {
+      formik.setFieldValue(field, file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFilePreviews((prev) => ({ ...prev, [field]: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      // Create FormData for handling file uploads
-      const formDataToSend = new FormData();
-
-      // Append all non-file fields
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value instanceof File) {
-          formDataToSend.append(key, value);
-        } else if (value !== null) {
-          formDataToSend.append(key, String(value));
-        }
-      });
-
-     const getProductDetialsMethod = () => {
-         return userRequest({
-           url: `/product/get-product/${id}`,
-           method: "get",
-         });
-       };
-     
-       const { data:productDetails } = useQuery("get-gem-details", getProductDetialsMethod, {
-         onSuccess: () => {
-           console.log(productDetails);
-         },
-         onError: (error: any) => {
-           console.log(error);
-         },
-       });
-
-      
-
-    //   onSuccess?.();
-    } catch (error) {
-      console.error("Error updating product:", error);
-    }
-  };
-
-  if (isLoading) {
+  if (loadingProduct)
     return (
-      <div className="flex items-center justify-center p-6">
-        <div className="text-lg">Loading product data...</div>
+      <div className="flex justify-center items-center h-screen">
+        <ClipLoader color="blue" size={50} />
       </div>
     );
-  }
 
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Product</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Basic Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Product Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) =>
-                      handleSelectChange("category", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gemstones">Gemstones</SelectItem>
-                      <SelectItem value="jewelry">Jewelry</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-md">
+      <h1 className="text-xl font-semibold mb-4">Edit Product</h1>
+      <form onSubmit={formik.handleSubmit} className="space-y-4">
+        {[
+          { label: "Category", name: "category", type: "text" },
+          { label: "Name", name: "name", type: "text" },
+          { label: "Description", name: "description", type: "textarea" },
+          { label: "Actual Price", name: "actual_price", type: "number" },
+          { label: "Offer Price", name: "offer_price", type: "number" },
+          {
+            label: "Physical Properties",
+            name: "physical_properties",
+            type: "text",
+          },
+        ].map((field) => (
+          <div key={field.name} className="space-y-1">
+            <label className="block font-medium">{field.label}</label>
+            {field.type === "textarea" ? (
+              <textarea
+                name={field.name}
+                value={formik.values[field.name]}
+                onChange={formik.handleChange}
+                className="w-full px-4 py-2 border rounded-md"
+              ></textarea>
+            ) : (
+              <input
+                type={field.type}
+                name={field.name}
+                value={formik.values[field.name]}
+                onChange={formik.handleChange}
+                className="w-full px-4 py-2 border rounded-md"
+              />
+            )}
+            {formik.errors[field.name] && (
+              <div className="text-sm text-red-500">
+                {formik.errors[field.name]}
               </div>
+            )}
+          </div>
+        ))}
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description || ""}
-                  onChange={handleInputChange}
-                  rows={4}
-                />
-              </div>
-            </div>
+        {[
+          { label: "Base Image", name: "base_img_url" },
+          { label: "Secondary Image 1", name: "sec_img1_url" },
+          { label: "Secondary Image 2", name: "sec_img2_url" },
+          { label: "Secondary Image 3", name: "sec_img3_url" },
+        ].map((field) => (
+          <div key={field.name} className="grid grid-cols-3space-y-1">
+            <label className="block font-medium">{field.label}</label>
+            <input
+              type="file"
+              name={field.name}
+              onChange={(e) => handleFileChange(e, field.name)}
+              className="w-full"
+            />
+            {filePreviews[field.name] && (
+              <img
+                src={filePreviews[field.name]}
+                alt={field.label}
+                className="w-20 h-20 object-cover mt-2 rounded-md"
+              />
+            )}
+          </div>
+        ))}
 
-            {/* Images and Media */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Images and Media</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="base_img_url">Base Image</Label>
-                  <Input
-                    id="base_img_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "base_img_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img1_url">Secondary Image 1</Label>
-                  <Input
-                    id="sec_img1_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img1_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img2_url">Secondary Image 2</Label>
-                  <Input
-                    id="sec_img2_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img2_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sec_img3_url">Secondary Image 3</Label>
-                  <Input
-                    id="sec_img3_url"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, "sec_img3_url")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="product_vid_url">Product Video</Label>
-                  <Input
-                    id="product_vid_url"
-                    type="file"
-                    accept="video/*"
-                    onChange={(e) => handleFileChange(e, "product_vid_url")}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Physical Properties */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Physical Properties</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weight_gms">Weight (gms)</Label>
-                  <Input
-                    id="weight_gms"
-                    name="weight_gms"
-                    type="number"
-                    value={formData.weight_gms}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight_carat">Weight (carat)</Label>
-                  <Input
-                    id="weight_carat"
-                    name="weight_carat"
-                    type="number"
-                    value={formData.weight_carat}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight_ratti">Weight (ratti)</Label>
-                  <Input
-                    id="weight_ratti"
-                    name="weight_ratti"
-                    type="number"
-                    value={formData.weight_ratti}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="length">Length</Label>
-                  <Input
-                    id="length"
-                    name="length"
-                    type="number"
-                    value={formData.length}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="width">Width</Label>
-                  <Input
-                    id="width"
-                    name="width"
-                    type="number"
-                    value={formData.width}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Characteristics */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Characteristics</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="shape">Shape</Label>
-                  <Select
-                    value={formData.shape}
-                    onValueChange={(value) =>
-                      handleSelectChange("shape", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shape" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Oval">Oval</SelectItem>
-                      <SelectItem value="Round">Round</SelectItem>
-                      <SelectItem value="Cushion">Cushion</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cut">Cut</Label>
-                  <Select
-                    value={formData.cut}
-                    onValueChange={(value) => handleSelectChange("cut", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mixed">Mixed</SelectItem>
-                      <SelectItem value="Brilliant">Brilliant</SelectItem>
-                      <SelectItem value="Step">Step</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="color">Color</Label>
-                  <Input
-                    id="color"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="origin">Origin</Label>
-                  <Input
-                    id="origin"
-                    name="origin"
-                    value={formData.origin}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="composition">Composition</Label>
-                  <Input
-                    id="composition"
-                    name="composition"
-                    value={formData.composition}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="certification">Certification</Label>
-                  <Input
-                    id="certification"
-                    name="certification"
-                    value={formData.certification}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Pricing</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="actual_price">Actual Price</Label>
-                  <Input
-                    id="actual_price"
-                    name="actual_price"
-                    type="number"
-                    value={formData.actual_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sale_price">Sale Price</Label>
-                  <Input
-                    id="sale_price"
-                    name="sale_price"
-                    type="number"
-                    value={formData.sale_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full">
-              Update Product
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <button
+          type="submit"
+          disabled={updateProductMutation.isLoading}
+          className={`w-full px-4 py-2 text-white rounded-md ${
+            updateProductMutation.isLoading ? "bg-gray-400" : "bg-blue-500"
+          }`}
+        >
+          {updateProductMutation.isLoading ? "Updating..." : "Update Product"}
+        </button>
+      </form>
     </div>
   );
 };
 
-export default EditProductPage;
+export default EditProductForm;

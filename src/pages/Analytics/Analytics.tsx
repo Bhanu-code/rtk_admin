@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+// import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Calendar, Filter, TrendingUp, Users, ShoppingBag, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Calendar, Filter, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const Analytics = () => {
   // Sample data representing user engagement metrics over time
@@ -42,8 +42,8 @@ const Analytics = () => {
     { name: 'Customer Acquisition Cost', current: 28, predicted: 25, trend: 'down', confidence: 75 }
   ];
 
-  const [selectedTimeframe, setSelectedTimeframe] = useState('7days');
-  const [activeMetric, setActiveMetric] = useState('activeUsers');
+  // const [selectedTimeframe, setSelectedTimeframe] = useState('7days');
+  // const [activeMetric, setActiveMetric] = useState('activeUsers');
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen mb-10">
