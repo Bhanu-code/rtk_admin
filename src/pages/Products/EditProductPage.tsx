@@ -141,24 +141,24 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
   );
 };
 // Reuse the validation function from AddProductForm
-const validateProduct = (formData: ProductFormData) => {
-  const errors: string[] = [];
+// const validateProduct = (formData: ProductFormData) => {
+//   const errors: string[] = [];
 
-  if (!formData.category) {
-    errors.push("Category cannot be null");
-  }
-  if (formData.actual_price < 0 || formData.sale_price < 0) {
-    errors.push("Negative Price not allowed!");
-  }
-  if (!formData.actual_price && formData.sale_price) {
-    errors.push("Actual Price cannot be null!");
-  }
-  if (formData.sale_price <= formData.actual_price) {
-    errors.push("Sale Price cannot be less than Actual Price!");
-  }
+//   if (!formData.category) {
+//     errors.push("Category cannot be null");
+//   }
+//   if (formData.actual_price < 0 || formData.sale_price < 0) {
+//     errors.push("Negative Price not allowed!");
+//   }
+//   if (!formData.actual_price && formData.sale_price) {
+//     errors.push("Actual Price cannot be null!");
+//   }
+//   if (formData.sale_price <= formData.actual_price) {
+//     errors.push("Sale Price cannot be less than Actual Price!");
+//   }
 
-  return errors;
-};
+//   return errors;
+// };
 
 const EditProductForm = () => {
   const { id } = useParams();
@@ -208,7 +208,7 @@ const EditProductForm = () => {
   const queryClient = useQueryClient();
 
   // Fetch product data
-  const { data: productDetails, isLoading:loadingProduct } = useQuery(
+  const {  isLoading:loadingProduct } = useQuery(
     ["get-product", id],
     () => userRequest({
       url: `/product/get-product/${id}`,
@@ -262,7 +262,7 @@ const EditProductForm = () => {
           product_vid_url: null,
         }));
       },
-      onError: (error: any) => {
+      onError: () => {
         toast.error("Failed to fetch product details", {
           position: "bottom-right",
           duration: 2000
@@ -293,6 +293,7 @@ const updateProductMutation = useMutation({
   },
   onSuccess: (data) => {
     // Show success message
+    console.log("DATA : ",data)
     toast.success("Product updated successfully!", {
       position: "bottom-right",
       duration: 2000,
@@ -390,11 +391,11 @@ const updateProductMutation = useMutation({
     }));
   };
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const numValue = Number(value);
-    setFormData(prev => ({ ...prev, [name]: numValue }));
-  };
+  // const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { name, value } = e.target;
+  //   const numValue = Number(value);
+  //   setFormData(prev => ({ ...prev, [name]: numValue }));
+  // };
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
