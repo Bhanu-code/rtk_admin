@@ -46,8 +46,23 @@ interface ProductFormData {
   color: string;
 }
 
-const FilePreview = ({ file, onRemove }:any) => {
-  const [preview, setPreview] = useState(null);
+type FileFields = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_img3_url' | 'product_vid_url';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface FilePreviewProps {
+  file: File | null;
+  onRemove: () => void;
+}
+
+const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
+  const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!file) {
@@ -67,7 +82,7 @@ const FilePreview = ({ file, onRemove }:any) => {
 
   return (
     <div className="relative">
-      {file.type.startsWith('image/') ? (
+      {file?.type.startsWith('image/') ? (
         <img 
           src={preview} 
           alt="Preview" 
@@ -143,21 +158,20 @@ const AddProductForm = () => {
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
-    
-    // Append all files
-    if (formData.base_img_url) formDataToSend.append('base_img', formData.base_img_url);
-    if (formData.sec_img1_url) formDataToSend.append('sec_img1', formData.sec_img1_url);
-    if (formData.sec_img2_url) formDataToSend.append('sec_img2', formData.sec_img2_url);
-    if (formData.sec_img3_url) formDataToSend.append('sec_img3', formData.sec_img3_url);
-    if (formData.product_vid_url) formDataToSend.append('product_video', formData.product_vid_url);
-
-    // Append other form data
+      
+    // Type guard to check if the key is a file field
+    const isFileField = (key: string): key is FileFields => {
+      return key.includes('_url');
+    }
+  
+    // Modified loop with type checking
     Object.keys(formData).forEach(key => {
-      if (!key.includes('_url')) {
-        formDataToSend.append(key, formData[key]);
+      if (!isFileField(key)) {
+        // Now TypeScript knows this is a valid key of ProductFormData
+        formDataToSend.append(key, String(formData[key as keyof ProductFormData]));
       }
     });
-
+  
     return formDataToSend;
   };
 
@@ -197,9 +211,9 @@ const AddProductForm = () => {
   const createProductMutation = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error('Authentication token is missing');
-
+  
       const formDataToSend = createFormDataWithFiles();
-
+  
       try {
         const response = await userRequest({
           url: "/product/create-product",
@@ -210,12 +224,13 @@ const AddProductForm = () => {
             'Content-Type': 'multipart/form-data'
           }
         });
-
+  
         if (!response.data) throw new Error('No data received from server');
         return response.data;
       } catch (error) {
-        console.error('Error details:', error?.response?.data);
-        throw new Error(error?.response?.data?.message || 'Failed to create product');
+        const apiError = error as ApiError;
+        console.error('Error details:', apiError?.response?.data);
+        throw new Error(apiError?.response?.data?.message || 'Failed to create product');
       }
     },
     onSuccess: () => {
@@ -232,7 +247,7 @@ const AddProductForm = () => {
     }
   });
 
-  const renderFileInput = (fieldName:any, label:any, accept:any) => (
+  const renderFileInput = (fieldName: keyof ProductFormData, label: string, accept: string) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName}>{label}</Label>
       <div className="space-y-2">
@@ -244,14 +259,13 @@ const AddProductForm = () => {
           className="mb-2"
         />
         <FilePreview
-          file={formData[fieldName]}
+          file={formData[fieldName] as File | null}
           onRemove={() => handleFileRemove(fieldName)}
         />
       </div>
     </div>
   );
-
-  const handleFileRemove = (fieldName:any) => {
+  const handleFileRemove = (fieldName: keyof ProductFormData) => {
     setFormData(prev => ({
       ...prev,
       [fieldName]: null

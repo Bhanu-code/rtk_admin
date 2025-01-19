@@ -9,20 +9,31 @@ import { X } from 'lucide-react';
 import ConfirmDelete from "./ConfirmDelete";
 import { toast } from "sonner";
 
+interface ImageModalProps {
+  imageUrl: string;
+  onClose: () => void;
+}
+
+interface ProductImageProps {
+  src: string | null;
+  alt: string;
+  className?: string;
+}
+
 const ViewProduct = () => {
   const { id } = useParams();
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Function to handle empty or null values
-  const formatValue = (value) => {
+  const formatValue = (value: unknown): string => {
     if (value === null || value === undefined || value === '' || value === 'null') {
       return '--│--';
     }
-    return value;
+    return String(value);
   };
 
   // Image modal component
-  const ImageModal = ({ imageUrl, onClose }) => (
+  const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="relative max-w-4xl w-full mx-4">
         <button 
@@ -35,9 +46,10 @@ const ViewProduct = () => {
           src={imageUrl} 
           alt="Full size" 
           className="w-full h-auto rounded-lg"
-          onError={(e) => {
-            e.target.src = '/placeholder-image.png';  // Add a placeholder image to your assets
-            e.target.alt = 'Image not available';
+          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+            const img = e.currentTarget;
+            img.src = '/placeholder-image.png';
+            img.alt = 'Image not available';
           }}
         />
       </div>
@@ -83,7 +95,7 @@ const ViewProduct = () => {
     );
 
   // Image component with error handling
-  const ProductImage = ({ src, alt, className }) => (
+  const ProductImage: React.FC<ProductImageProps> = ({ src, alt, className }) => (
     <div 
       className={`relative cursor-pointer hover:opacity-90 transition-opacity ${className}`}
       onClick={() => src && setSelectedImage(src)}
@@ -93,9 +105,10 @@ const ViewProduct = () => {
           src={src}
           alt={alt}
           className="size-56 object-contain rounded"
-          onError={(e) => {
-            e.target.src = '/placeholder-image.png';
-            e.target.alt = 'Image not available';
+          onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+            const img = e.currentTarget;
+            img.src = '/placeholder-image.png';
+            img.alt = 'Image not available';
           }}
         />
       ) : (
