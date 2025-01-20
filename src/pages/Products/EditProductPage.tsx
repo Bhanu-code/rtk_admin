@@ -26,8 +26,6 @@ type ImageFieldName = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_im
 type RemovedImages = {
   [key in ImageFieldName]: boolean;
 };
-
-
 // Reuse the same interface from AddProductForm
 interface ProductFormData {
   // Product fields
@@ -58,8 +56,6 @@ interface ProductFormData {
   composition: string;
   certification: string;
   color: string;
-
-  // Additional fields
   existingImages: {
     base_img_url: string | null;
     sec_img1_url: string | null;
@@ -69,18 +65,13 @@ interface ProductFormData {
   };
 
   removedImages: RemovedImages;
-  
 }
-
-
 
 interface FilePreviewProps {
   file: File | null;
   existingUrl: string | null;
   onRemove: () => void;
 }
-
-
 
 interface ApiError {
   message: string;
@@ -89,7 +80,6 @@ interface ApiError {
     status: number;
   };
 }
-
 
 // Reuse the FilePreview component from AddProductForm
 const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }) => {
@@ -112,20 +102,26 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
 
   if (!preview && !existingUrl) return null;
 
-  const isImage = file ? file.type.startsWith('image/') : existingUrl?.match(/\.(jpg|jpeg|png|gif)$/i);
+  // Determine if the content is a video based on either the file type or URL
+  const isVideo = file 
+    ? file.type.startsWith('video/')
+    : existingUrl?.match(/\.(mp4|webm|ogg|mov)$/i);
+
   const displayUrl = preview || existingUrl;
 
   return (
     <div className="relative">
-      {isImage ? (
+      {!isVideo ? (
+        // Image preview
         <img 
           src={displayUrl || ''} 
           alt="Preview" 
           className="w-full h-32 object-contain rounded-md"
         />
-      ) : displayUrl && (
+      ) : (
+        // Video preview
         <video 
-          src={displayUrl} 
+          src={displayUrl || ''} 
           className="w-full h-32 object-contain rounded-md" 
           controls
         />
@@ -140,25 +136,8 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
     </div>
   );
 };
+
 // Reuse the validation function from AddProductForm
-// const validateProduct = (formData: ProductFormData) => {
-//   const errors: string[] = [];
-
-//   if (!formData.category) {
-//     errors.push("Category cannot be null");
-//   }
-//   if (formData.actual_price < 0 || formData.sale_price < 0) {
-//     errors.push("Negative Price not allowed!");
-//   }
-//   if (!formData.actual_price && formData.sale_price) {
-//     errors.push("Actual Price cannot be null!");
-//   }
-//   if (formData.sale_price <= formData.actual_price) {
-//     errors.push("Sale Price cannot be less than Actual Price!");
-//   }
-
-//   return errors;
-// };
 
 const EditProductForm = () => {
   const { id } = useParams();
@@ -391,12 +370,6 @@ const updateProductMutation = useMutation({
     }));
   };
 
-  // const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const { name, value } = e.target;
-  //   const numValue = Number(value);
-  //   setFormData(prev => ({ ...prev, [name]: numValue }));
-  // };
-
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
     
@@ -453,33 +426,7 @@ const updateProductMutation = useMutation({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Show loading toast while validating
-    // const loadingToast = toast.loading("Validating form...", {
-    //   // position: "bottom-right"
-    // });
-    
-    // const validationErrors = validateProduct(formData);
-    // if (validationErrors.length > 0) {
-    //   // Dismiss loading toast
-    //   toast.dismiss(loadingToast);
-      
-    //   // Show validation errors
-    //   toast.error(validationErrors.join("\n"), {
-    //     position: "bottom-right",
-    //     duration: 2000
-    //   });
-    //   return;
-    // }
-  
-    // Dismiss loading toast
-    // toast.dismiss(loadingToast);
-  
-    // Show processing toast
-    // toast.loading("Updating product...", {
-    //   position: "bottom-right"
-    // });
-  
+
     const formDataToSend = createFormDataWithFiles();
     updateProductMutation.mutate(formDataToSend);
   };
