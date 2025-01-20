@@ -72,7 +72,7 @@ const GemstoneForm = () => {
       }
 
       const response = await fetch(
-        "http://localhost:5000/gemstones/create-gemblog",
+        `${import.meta.env.VITE_PROXY_URL}/gemstones/create-gemblog`,
         {
           method: "POST",
           // Don't set Content-Type header - let the browser set it with boundary for FormData

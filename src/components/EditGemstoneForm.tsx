@@ -55,7 +55,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
     ["gemstone", gemstoneId],
     async () => {
       const response = await fetch(
-        `http://localhost:5000/gemstones/get-gemblog/${gemstoneId}/`
+        `${import.meta.env.VITE_PROXY_URL}/gemstones/get-gemblog/${gemstoneId}/`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch gemstone data");
@@ -99,7 +99,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
       };
 
       const response = await fetch(
-        `http://localhost:5000/gemstones/update-gemblog/${gemstoneId}/`,
+        `${import.meta.env.VITE_PROXY_URL}/gemstones/update-gemblog/${gemstoneId}/`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
