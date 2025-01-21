@@ -19,11 +19,11 @@ import { useSelector } from "react-redux";
 import { X } from "lucide-react";
 
 interface ProductFormData {
-  base_img_url: File | null;
-  sec_img1_url: File | null;
-  sec_img2_url: File | null;
-  sec_img3_url: File | null;
-  product_vid_url: File | null;
+  base_img: File | null;  // Changed from base_img_url
+  sec_img1: File | null;  // Changed from sec_img1_url
+  sec_img2: File | null;  // Changed from sec_img2_url
+  sec_img3: File | null;  // Changed from sec_img3_url
+  product_vid: File | null; 
   cert_img_url: string;
   name: string;
   description: string | null;
@@ -46,15 +46,19 @@ interface ProductFormData {
   color: string;
 }
 
-type FileFields = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_img3_url' | 'product_vid_url';
+type FileFields = 'base_img' | 'sec_img1' | 'sec_img2' | 'sec_img3' | 'product_vid';
 
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-}
+// const isFileField = (key: string): key is FileFields => {
+//   return ['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid'].includes(key);
+// };
+
+// interface ApiError {
+//   response?: {
+//     data?: {
+//       message?: string;
+//     };
+//   };
+// }
 
 interface FilePreviewProps {
   file: File | null;
@@ -118,8 +122,8 @@ const validateProduct = (formData: ProductFormData) => {
   if (!formData.actual_price && formData.sale_price) {
     errors.push("Actual Price cannot be null!");
   }
-  if (formData.sale_price <= formData.actual_price) {
-    errors.push("Sale Price cannot be less than Actual Price!");
+  if (formData.sale_price > formData.actual_price) {
+    errors.push("Actual Price cannot be less than Sale Price!");
   }
 
   return errors;
@@ -129,11 +133,11 @@ const validateProduct = (formData: ProductFormData) => {
 
 const AddProductForm = () => {
   const [formData, setFormData] = React.useState<ProductFormData>({
-    base_img_url: null,
-    sec_img1_url: null,
-    sec_img2_url: null,
-    sec_img3_url: null,
-    product_vid_url: null,
+    base_img: null,
+    sec_img1: null,
+    sec_img2: null,
+    sec_img3: null,
+    product_vid: null,
     cert_img_url: "",
     name: "",
     description: null,
@@ -158,19 +162,20 @@ const AddProductForm = () => {
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
-      
-    // Type guard to check if the key is a file field
-    const isFileField = (key: string): key is FileFields => {
-      return key.includes('_url');
-    }
-  
-    // Modified loop with type checking
+    
+    // Append regular form fields
     Object.keys(formData).forEach(key => {
-      if (!isFileField(key)) {
-        // Now TypeScript knows this is a valid key of ProductFormData
+      if (!key.includes('_url')) {
         formDataToSend.append(key, String(formData[key as keyof ProductFormData]));
       }
     });
+  
+    // Handle file uploads with correct field names
+    if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
+    if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
+    if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
+    if (formData.sec_img3) formDataToSend.append('sec_img3', formData.sec_img3);
+    if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
   
     return formDataToSend;
   };
@@ -214,24 +219,17 @@ const AddProductForm = () => {
   
       const formDataToSend = createFormDataWithFiles();
   
-      try {
-        const response = await userRequest({
-          url: "/product/create-product",
-          method: "POST",
-          data: formDataToSend,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+      const response = await userRequest({
+        url: "/product/create-product",
+        method: "POST",
+        data: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        }
+      });
   
-        if (!response.data) throw new Error('No data received from server');
-        return response.data;
-      } catch (error) {
-        const apiError = error as ApiError;
-        console.error('Error details:', apiError?.response?.data);
-        throw new Error(apiError?.response?.data?.message || 'Failed to create product');
-      }
+      return response.data;
     },
     onSuccess: () => {
       toast.success("Product created successfully!", {
@@ -247,7 +245,7 @@ const AddProductForm = () => {
     }
   });
 
-  const renderFileInput = (fieldName: keyof ProductFormData, label: string, accept: string) => (
+  const renderFileInput = (fieldName: FileFields, label: string, accept: string) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName}>{label}</Label>
       <div className="space-y-2">
@@ -259,12 +257,13 @@ const AddProductForm = () => {
           className="mb-2"
         />
         <FilePreview
-          file={formData[fieldName] as File | null}
+          file={formData[fieldName]}
           onRemove={() => handleFileRemove(fieldName)}
         />
       </div>
     </div>
   );
+
   const handleFileRemove = (fieldName: keyof ProductFormData) => {
     setFormData(prev => ({
       ...prev,
@@ -355,12 +354,12 @@ const AddProductForm = () => {
             <div className="space-y-4">
           <h3 className="text-lg font-medium">Images and Media</h3>
           <div className="grid grid-cols-2 gap-4">
-            {renderFileInput("base_img_url", "Base Image", "image/*")}
-            {renderFileInput("sec_img1_url", "Secondary Image 1", "image/*")}
-            {renderFileInput("sec_img2_url", "Secondary Image 2", "image/*")}
-            {renderFileInput("sec_img3_url", "Secondary Image 3", "image/*")}
-            {renderFileInput("product_vid_url", "Product Video", "video/*")}
-          </div>
+  {renderFileInput("base_img", "Base Image", "image/*")}
+  {renderFileInput("sec_img1", "Secondary Image 1", "image/*")}
+  {renderFileInput("sec_img2", "Secondary Image 2", "image/*")}
+  {renderFileInput("sec_img3", "Secondary Image 3", "image/*")}
+  {renderFileInput("product_vid", "Product Video", "video/*")}
+</div>
         </div>
 
             {/* Physical Properties */}
@@ -466,6 +465,17 @@ const AddProductForm = () => {
                     onChange={handleInputChange}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="treatment">Treatment</Label>
+                  <Input
+                    id="treatment"
+                    name="treatment"
+                    value={formData.treatment}
+                    onChange={handleInputChange}
+                    placeholder="Enter treatment details"
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="composition">Composition</Label>
                   <Input
