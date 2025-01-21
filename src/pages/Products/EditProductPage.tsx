@@ -26,7 +26,7 @@ type ImageFieldName = 'base_img_url' | 'sec_img1_url' | 'sec_img2_url' | 'sec_im
 type RemovedImages = {
   [key in ImageFieldName]: boolean;
 };
-// Reuse the same interface from AddProductForm
+
 interface ProductFormData {
   // Product fields
   [key: string]: any;
@@ -42,7 +42,7 @@ interface ProductFormData {
   quantity: number;
   actual_price: number;
   sale_price: number;
-  cert_img_url:string
+  cert_img_url: string
   // Attribute fields
   origin: string;
   weight_gms: number;
@@ -87,7 +87,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
 
   useEffect(() => {
     let objectUrl: string | null = null;
-    
+
     if (file) {
       objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
@@ -103,7 +103,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
   if (!preview && !existingUrl) return null;
 
   // Determine if the content is a video based on either the file type or URL
-  const isVideo = file 
+  const isVideo = file
     ? file.type.startsWith('video/')
     : existingUrl?.match(/\.(mp4|webm|ogg|mov)$/i);
 
@@ -113,16 +113,16 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, existingUrl, onRemove }
     <div className="relative">
       {!isVideo ? (
         // Image preview
-        <img 
-          src={displayUrl || ''} 
-          alt="Preview" 
+        <img
+          src={displayUrl || ''}
+          alt="Preview"
           className="w-full h-32 object-contain rounded-md"
         />
       ) : (
         // Video preview
-        <video 
-          src={displayUrl || ''} 
-          className="w-full h-32 object-contain rounded-md" 
+        <video
+          src={displayUrl || ''}
+          className="w-full h-32 object-contain rounded-md"
           controls
         />
       )}
@@ -187,7 +187,7 @@ const EditProductForm = () => {
   const queryClient = useQueryClient();
 
   // Fetch product data
-  const {  isLoading:loadingProduct } = useQuery(
+  const { isLoading: loadingProduct } = useQuery(
     ["get-product", id],
     () => userRequest({
       url: `/product/get-product/${id}`,
@@ -196,7 +196,7 @@ const EditProductForm = () => {
     {
       onSuccess: (response) => {
         const { product, attribute } = response.data;
-        
+
         // Combine product and attribute data
         setFormData(prev => ({
           ...prev,
@@ -208,7 +208,7 @@ const EditProductForm = () => {
           quantity: product.quantity,
           actual_price: product.actual_price,
           sale_price: product.sale_price,
-          
+
           // Attribute fields
           origin: attribute.origin,
           weight_gms: attribute.weight_gms,
@@ -250,68 +250,68 @@ const EditProductForm = () => {
     }
   );
   // Update mutation
- // Update mutation
-const updateProductMutation = useMutation({
-  mutationFn: async (formDataToSend: FormData) => {
-    if (!token) throw new Error('Authentication token is missing');
+  // Update mutation
+  const updateProductMutation = useMutation({
+    mutationFn: async (formDataToSend: FormData) => {
+      if (!token) throw new Error('Authentication token is missing');
 
-    try {
-      const response = await userRequest({
-        url: `/product/update-product/${id}`,
-        method: "PUT",
-        data: formDataToSend,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
+      try {
+        const response = await userRequest({
+          url: `/product/update-product/${id}`,
+          method: "PUT",
+          data: formDataToSend,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
 
-      return response.data;
-    } catch (error) {
-      throw error as ApiError;
-    }
-  },
-  onSuccess: (data) => {
-    // Show success message
-    console.log("DATA : ",data)
-    toast.success("Product updated successfully!", {
-      position: "bottom-right",
-      duration: 2000,
-      // You can add a custom icon if desired
-      // icon: "✨"
-    });
-
-    // Invalidate and refetch relevant queries to update the UI
-    queryClient.invalidateQueries(["get-product", id]);
-    
-    // You can also add another toast to confirm specific updates
-    if (Object.values(formData.removedImages).some(removed => removed)) {
-      toast.success("Images updated successfully", {
+        return response.data;
+      } catch (error) {
+        throw error as ApiError;
+      }
+    },
+    onSuccess: (data) => {
+      // Show success message
+      console.log("DATA : ", data)
+      toast.success("Product updated successfully!", {
         position: "bottom-right",
         duration: 2000,
-        // Add slight delay to prevent toast overlap
-        // delay: 500
+        // You can add a custom icon if desired
+        // icon: "✨"
+      });
+
+      // Invalidate and refetch relevant queries to update the UI
+      queryClient.invalidateQueries(["get-product", id]);
+
+      // You can also add another toast to confirm specific updates
+      if (Object.values(formData.removedImages).some(removed => removed)) {
+        toast.success("Images updated successfully", {
+          position: "bottom-right",
+          duration: 2000,
+          // Add slight delay to prevent toast overlap
+          // delay: 500
+        });
+      }
+    },
+    onError: (error: ApiError) => {
+      console.error("Mutation error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update product";
+      toast.error(errorMessage, {
+        position: "bottom-right",
+        duration: 2000
       });
     }
-  },
-  onError: (error: ApiError) => {
-    console.error("Mutation error:", {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
-    const errorMessage = error.response?.data?.message || error.message || "Failed to update product";
-    toast.error(errorMessage, {
-      position: "bottom-right",
-      duration: 2000
-    });
-  }
-});
+  });
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const isNumberField = e.target.type === 'number';
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: isNumberField ? Number(value) || 0 : value,
@@ -324,7 +324,7 @@ const updateProductMutation = useMutation({
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // Validate file type for sec_img3_url
       if (fieldName === 'sec_img3_url' && !file.type.startsWith('image/')) {
         toast.error('Please select an image file for Secondary Image 3', {
@@ -348,7 +348,7 @@ const updateProductMutation = useMutation({
 
   const handleFileRemove = (fieldName: ImageFieldName) => {
     console.log(`Removing file for field: ${fieldName}`);
-    
+
     setFormData(prev => ({
       ...prev,
       [fieldName]: null,
@@ -372,7 +372,7 @@ const updateProductMutation = useMutation({
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
-    
+
     // Prepare product data
     const productData: Partial<ProductFormData> = {
       name: formData.name,
@@ -383,7 +383,7 @@ const updateProductMutation = useMutation({
       actual_price: Number(formData.actual_price),
       sale_price: Number(formData.sale_price)
     };
-  
+
     // Prepare attribute data
     const attributeData = {
       origin: formData.origin,
@@ -399,12 +399,12 @@ const updateProductMutation = useMutation({
       certification: formData.certification,
       color: formData.color
     };
-  
+
     // Append stringified data
     formDataToSend.append('productData', JSON.stringify(productData));
     formDataToSend.append('attributeData', JSON.stringify(attributeData));
-  
-    // Handle file uploads
+
+    // Handle file uploads with correct field names
     const fileFieldMappings = {
       'base_img_url': 'base_img',
       'sec_img1_url': 'sec_img1',
@@ -412,23 +412,36 @@ const updateProductMutation = useMutation({
       'sec_img3_url': 'sec_img3',
       'product_vid_url': 'product_video'
     };
-  
-    Object.entries(fileFieldMappings).forEach(([fieldName, serverFieldName]) => {
-      if (formData[fieldName]) {
-        formDataToSend.append(serverFieldName, formData[fieldName]);
-      } else if (formData.removedImages[fieldName as ImageFieldName]) {
-        formDataToSend.append(`${serverFieldName}_remove`, 'true');
+
+    Object.entries(fileFieldMappings).forEach(([stateField, serverField]) => {
+      const file = formData[stateField];
+      if (file instanceof File) {
+        // New file upload
+        formDataToSend.append(serverField, file);
+      } else if (formData.removedImages[stateField as ImageFieldName]) {
+        // Explicitly mark for removal
+        formDataToSend.append(`${serverField}_remove`, 'true');
       }
     });
-  
+
     return formDataToSend;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formDataToSend = createFormDataWithFiles();
-    updateProductMutation.mutate(formDataToSend);
+    try {
+      const formDataToSend = createFormDataWithFiles();
+      await updateProductMutation.mutateAsync(formDataToSend);
+
+      // Show success message
+      // toast.success("Product updated successfully!");
+
+      // Optionally redirect or refresh data
+      queryClient.invalidateQueries(["get-product", id]);
+    } catch (error: any) { // Type the error as 'any' temporarily
+      toast.error(error?.message || "Failed to update product");
+    }
   };
 
   const renderFileInput = (
@@ -436,7 +449,7 @@ const updateProductMutation = useMutation({
     label: string
   ) => {
     const accept = fieldName === 'product_vid_url' ? 'video/*' : 'image/*';
-    
+
     return (
       <div className="space-y-2">
         <Label htmlFor={fieldName}>{label}</Label>
@@ -456,7 +469,6 @@ const updateProductMutation = useMutation({
         </div>
       </div>
     );
-
   };
 
   if (loadingProduct)
@@ -533,7 +545,7 @@ const updateProductMutation = useMutation({
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Images and Media</h3>
               <div className="grid grid-cols-2 gap-4">
-              {renderFileInput("base_img_url", "Base Image")}
+                {renderFileInput("base_img_url", "Base Image")}
                 {renderFileInput("sec_img1_url", "Secondary Image 1")}
                 {renderFileInput("sec_img2_url", "Secondary Image 2")}
                 {renderFileInput("sec_img3_url", "Secondary Image 3")}
@@ -608,37 +620,33 @@ const updateProductMutation = useMutation({
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="shape">Shape</Label>
-                  <Select
+                  <Input
+                    id="shape"
+                    name="shape"
                     value={formData.shape}
-                    onValueChange={(value) =>
-                      handleSelectChange("shape", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select shape" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Oval">Oval</SelectItem>
-                      <SelectItem value="Round">Round</SelectItem>
-                      <SelectItem value="Cushion">Cushion</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onChange={handleInputChange}
+                    placeholder="Enter shape"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cut">Cut</Label>
-                  <Select
+                  <Input
+                    id="cut"
+                    name="cut"
                     value={formData.cut}
-                    onValueChange={(value) => handleSelectChange("cut", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mixed">Mixed</SelectItem>
-                      <SelectItem value="Brilliant">Brilliant</SelectItem>
-                      <SelectItem value="Step">Step</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onChange={handleInputChange}
+                    placeholder="Enter cut"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="treatment">Treatment</Label>
+                  <Input
+                    id="treatment"
+                    name="treatment"
+                    value={formData.treatment}
+                    onChange={handleInputChange}
+                    placeholder="Enter treatment"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="color">Color</Label>
@@ -716,8 +724,8 @@ const updateProductMutation = useMutation({
               </div>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               disabled={updateProductMutation.isLoading}
             >
