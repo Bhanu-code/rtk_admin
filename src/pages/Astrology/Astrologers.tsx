@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -20,12 +20,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormField,
   FormItem,
   FormLabel,
   FormControl,
@@ -33,12 +30,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from '@/components/ui/calendar';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Edit, Trash2, Clock, MapPin, Phone } from 'lucide-react';
+// import { Calendar } from '@/components/ui/calendar';
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Edit, Trash2, MapPin, Phone } from 'lucide-react';
+
+interface Astrologer {
+  id: string;
+  full_name: string;
+  experience: string;
+  address: string;
+  contact_no: string;
+  availibity: {
+    monday?: string[];
+    tuesday?: string[];
+    wednesday?: string[];
+    [key: string]: string[] | undefined; 
+  };
+}
+
 
 const Astrologers = () => {
-  const [astrologers, setAstrologers] = useState([
+  const [astrologers, _] = useState([
     {
       id: "1",
       full_name: "Dr. Sharma",
@@ -54,7 +66,8 @@ const Astrologers = () => {
   ]);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedAstrologer, setSelectedAstrologer] = useState(null);
+  
+  const [selectedAstrologer, setSelectedAstrologer] = useState<Astrologer | undefined>();
 
   return (
     <div className="p-8">
