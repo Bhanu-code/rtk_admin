@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -20,7 +20,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -31,11 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormField,
   FormItem,
   FormLabel,
-  FormControl,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Calendar } from '@/components/ui/calendar';
@@ -45,7 +41,7 @@ import { Plus, Calendar as CalendarIcon, Clock, UserCircle, Search } from 'lucid
 
 const Appointments = () => {
   // Sample data - in production, this would come from your API
-  const [appointments, setAppointments] = useState([
+  const [appointments, _] = useState([
     {
       id: "1",
       userId: "user1",
@@ -61,7 +57,7 @@ const Appointments = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   // Function to format date for display
-  const formatDate = (date) => {
+  const formatDate = (date:any) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

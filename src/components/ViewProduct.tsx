@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import ConfirmDelete from "./ConfirmDelete";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@radix-ui/react-select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@radix-ui/react-select";
 
 interface ImageModalProps {
   imageUrl: string;

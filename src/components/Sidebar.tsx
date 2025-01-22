@@ -12,7 +12,7 @@ const Sidebar = () => {
   const [active, setActive] = useState("Dashboard");
 
   // Helper function to render regular tab buttons
-  const renderTabButton = (item) => (
+  const renderTabButton = (item:any) => (
     <Link to={item.link} key={item.tab_name} className="text-left">
       <button
         onClick={() => setActive(item.tab_name)}
@@ -26,8 +26,8 @@ const Sidebar = () => {
   );
 
   // Helper function to render accordion sub-items
-  const renderAccordionItems = (items) => (
-    items.map((item) => (
+  const renderAccordionItems = (items:any) => (
+    items.map((item:any) => (
       <Link to={item.link} key={item.tab_name} className="text-left">
         <button
           onClick={() => setActive(item.tab_name)}
