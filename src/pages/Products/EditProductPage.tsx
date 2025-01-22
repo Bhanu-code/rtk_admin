@@ -56,6 +56,7 @@ interface ProductFormData {
   composition: string;
   certification: string;
   color: string;
+  status: string;
   existingImages: {
     base_img_url: string | null;
     sec_img1_url: string | null;
@@ -168,6 +169,7 @@ const EditProductForm = () => {
     composition: "",
     certification: "",
     color: "",
+    status: "Draft",
     existingImages: {
       base_img_url: '',
       sec_img1_url: '',
@@ -221,8 +223,8 @@ const EditProductForm = () => {
           treatment: attribute.treatment,
           composition: attribute.composition,
           certification: attribute.certification,
-          color: attribute.color,
-
+          color: attribute.color, 
+          status: product.status || "Draft",
           // Store existing image URLs
           existingImages: {
             base_img_url: product.base_img_url,
@@ -381,7 +383,8 @@ const EditProductForm = () => {
       subcategory: formData.subcategory,
       quantity: Number(formData.quantity),
       actual_price: Number(formData.actual_price),
-      sale_price: Number(formData.sale_price)
+      sale_price: Number(formData.sale_price),
+      status: formData.status,
     };
 
     // Prepare attribute data
@@ -489,6 +492,36 @@ const EditProductForm = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
+
+            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <Label htmlFor="status" className="font-medium">
+                  Product Status
+                </Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => handleSelectChange("status", value)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Public">Public</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  formData.status === 'Public' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {formData.status}
+                </span>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Basic Information</h3>
               <div className="grid grid-cols-2 gap-4">

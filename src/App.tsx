@@ -23,6 +23,8 @@ import AddProductPage from "./pages/Products/AddProductPage";
 import ViewProductPage from "./pages/Products/ViewProductPage";
 import EditProductPage from "./pages/Products/EditProductPage";
 import Orders from "./pages/Orders/Orders";
+import Astrologers from "./pages/Astrology/Astrologers";
+import Appointments from "./pages/Astrology/Appointments";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -124,6 +126,14 @@ function App() {
         {
           path: "/home/products/edit/:id",
           element: <EditProductPage />,
+        },
+        {
+          path: "/home/astrologers",
+          element: <Astrologers />,
+        },
+        {
+          path: "/home/appointments",
+          element: <Appointments />,
         },
         
       ],
