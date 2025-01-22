@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import ConfirmDelete from "./ConfirmDelete";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@radix-ui/react-select";
 
 interface ImageModalProps {
   imageUrl: string;
@@ -148,6 +149,24 @@ const ViewProduct = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+
+          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <Label htmlFor="status" className="font-medium">
+                  Product Status
+                </Label>
+              
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                  product?.data?.product?.status === 'Public' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {product?.data?.product?.status}
+                </span>
+              </div>
+            </div>
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Basic Information</h3>

@@ -1,34 +1,46 @@
 export const tabs = [
     {
         tab_name: "Dashboard",
-        link: "/home/dashboard"
+        link: "/home/dashboard",
+        type: "tab"
     },
-    // {
-    //     tab_name: "Orders",
-    //     link: "/home/orders"
-    // },
     {
         tab_name: "Products",
-        link: "/home/products"
+        link: "/home/products",
+        type: "tab"
     },
     {
         tab_name: "Customers",
-        link: "/home/customers"
+        link: "/home/customers",
+        type: "tab"
     },
-    // {
-    //     tab_name: "Users",
-    //     link: "/home/users"
-    // },
+    {
+        tab_name: "Astrology",
+        type: "accordion",
+        items: [
+            {
+                tab_name: "Astrologers",
+                link: "/home/astrologers"
+            },
+            {
+                tab_name: "Appointments",
+                link: "/home/appointments"
+            }
+        ]
+    },
     {
         tab_name: "Reports",
-        link: "/home/reports"
+        link: "/home/reports",
+        type: "tab"
     },
     {
         tab_name: "Analytics",
-        link: "/home/analytics"
+        link: "/home/analytics",
+        type: "tab"
     },
     {
         tab_name: "Gemblogs",
-        link: "/home/gemblogs"
-    },
+        link: "/home/gemblogs",
+        type: "tab"
+    }
 ]
