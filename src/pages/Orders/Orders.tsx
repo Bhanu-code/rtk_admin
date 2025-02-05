@@ -72,7 +72,7 @@ const Orders = () => {
   ];
 
   const [orders, setOrders] = useState(initialOrders);
-  console.log(setOrders)
+  console.log(setOrders);
   const [selectedOrder, setSelectedOrder] = useState({
     id: "",
     date: "",
@@ -115,7 +115,7 @@ const Orders = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 mb-10 bg-gray-50 min-h-screen">
       {/* Header with controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -271,91 +271,6 @@ const Orders = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Order Details Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>Order Details</CardTitle>
-              <button
-                onClick={() =>
-                  setSelectedOrder({
-                    id: "",
-                    date: "",
-                    email: "",
-                    customer: "",
-                    payment: "",
-                    shipping: "",
-                    total: "",
-                    status: "",
-                  })
-                }
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Order ID</p>
-                    <p className="font-medium">{selectedOrder.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Date</p>
-                    <p className="font-medium">
-                      {new Date(selectedOrder.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Customer</p>
-                    <p className="font-medium">{selectedOrder.customer}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedOrder.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Payment Method</p>
-                    <p className="font-medium">{selectedOrder.payment}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Shipping Method</p>
-                    <p className="font-medium">{selectedOrder.shipping}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Total Amount</p>
-                    <p className="font-medium">${selectedOrder.total}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <span
-                      className={`inline-block mt-1 px-3 py-1 rounded-full text-sm ${getStatusStyle(
-                        selectedOrder.status
-                      )}`}
-                    >
-                      {selectedOrder.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4 mt-4">
-                  <div className="flex justify-end gap-3">
-                    <button className="px-4 py-2 border rounded-lg hover:bg-gray-50">
-                      Print Order
-                    </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                      Update Status
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };

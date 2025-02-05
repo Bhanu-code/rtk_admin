@@ -5,6 +5,11 @@ export const tabs = [
         type: "tab"
     },
     {
+        tab_name: "Orders",
+        link: "/home/orders",
+        type: "tab"
+    },
+    {
         tab_name: "Products",
         link: "/home/products",
         type: "tab"
