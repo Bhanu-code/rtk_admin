@@ -67,7 +67,7 @@ const OrderDetails = () => {
     ]
   });
 
-  // console.log(setOrder(null))
+  console.log(typeof setOrder)
 
   const getStatusColor = (status:any) => {
     switch (status) {

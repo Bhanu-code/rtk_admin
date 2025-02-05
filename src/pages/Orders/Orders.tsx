@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Search,
   Download,
@@ -85,6 +85,8 @@ const Orders = () => {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  console.log(selectedOrder)
 
   // Function to get status badge styling
   const getStatusStyle = (status: any) => {

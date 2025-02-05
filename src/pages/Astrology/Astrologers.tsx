@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
+import { useMutation, useQuery } from 'react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
@@ -132,7 +132,7 @@ const Astrologers = () => {
   const token = useSelector((state: any) => state.user.accessToken);
 
   // Query client for cache management
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   // Fetch Astrologers Query
   const { data: astrologers = [], isLoading, refetch } = useQuery(
@@ -275,7 +275,7 @@ const Astrologers = () => {
   const filteredAvailability = Object.fromEntries(
     Object.entries(formData.availibity).map(([day, slots]) => [
       day, 
-      slots.filter(slot => slot.trim() !== '')
+      slots?.filter(slot => slot.trim() !== '')
     ])
   );
 
