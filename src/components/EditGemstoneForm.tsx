@@ -4,17 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
 import { useMutation, useQuery } from "react-query";
+import { toast } from "sonner";
 
 interface GemstoneFormData {
   name: string;
@@ -28,6 +30,7 @@ interface GemstoneFormData {
   specifications: string;
   faqs: string;
   curiousFacts: string;
+  featured: boolean; // New field
 }
 
 interface EditGemstoneFormProps {
@@ -48,10 +51,11 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
     specifications: "",
     faqs: "",
     curiousFacts: "",
+    featured: false,
   });
 
   // Fetch existing gemstone data
-  const { data: gemstoneData, isLoading } = useQuery(
+  const { data: gemstoneData, isLoading: isLoadingData } = useQuery(
     ["gemstone", gemstoneId],
     async () => {
       const response = await fetch(
@@ -63,6 +67,8 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
       return response.json();
     }
   );
+
+  console.log("DATA : ", gemstoneData)
 
   // Update form data when gemstone data is fetched
   useEffect(() => {
@@ -79,6 +85,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         specifications: gemstoneData.specifications || "",
         faqs: gemstoneData.faqs || "",
         curiousFacts: gemstoneData.curiousFacts || "",
+        featured: gemstoneData.featured || false,
       });
     }
   }, [gemstoneData]);
@@ -96,7 +103,11 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         specifications: formData.specifications,
         faqs: formData.faqs,
         curiousFacts: formData.curiousFacts,
+        featured: formData.featured,
       };
+
+      // Simulate a slight delay to show loading state (remove in production)
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const response = await fetch(
         `${import.meta.env.VITE_PROXY_URL}/gemstones/update-gemblog/${gemstoneId}/`,
@@ -118,6 +129,10 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         type: "success",
         message: "Gemstone data updated successfully!",
       });
+      toast.success("Gemstone updated successfully!", {
+        position: "bottom-right",
+        duration: 2000
+      });
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -125,8 +140,19 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         type: "error",
         message: error.message,
       });
+      toast.error("Failed to update gemstone", {
+        position: "bottom-right",
+        duration: 2000
+      });
     },
   });
+
+  const handleFeaturedToggle = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      featured: checked
+    }));
+  };
 
   const [submitStatus, setSubmitStatus] = useState<{
     type: "success" | "error" | "";
@@ -198,13 +224,14 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
     </div>
   );
 
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Card>
           <CardContent className="p-8">
-            <div className="flex items-center justify-center">
-              Loading gemstone data...
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-lg text-muted-foreground">Loading gemstone data...</p>
             </div>
           </CardContent>
         </Card>
@@ -221,7 +248,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Same Accordion structure as before */}
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="multiple" className="w-full">
               {/* Basic Information */}
               <AccordionItem value="basic">
                 <AccordionTrigger>Basic Information</AccordionTrigger>
@@ -235,6 +262,19 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
                       }
                       placeholder="Enter gemstone name"
                     />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Label>Featured on Home Page</Label>
+                    <Switch
+                      checked={formData.featured}
+                      onCheckedChange={handleFeaturedToggle}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {formData.featured
+                        ? "This gemstone will be shown on the home page"
+                        : "This gemstone will not be featured on the home page"}
+                    </span>
                   </div>
 
                   <div>
@@ -366,9 +406,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
 
             {submitStatus.message && (
               <Alert
-                variant={
-                  submitStatus.type === "error" ? "destructive" : "default"
-                }
+                variant={submitStatus.type === "error" ? "destructive" : "default"}
               >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{submitStatus.message}</AlertDescription>
@@ -380,7 +418,14 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
               className="w-full"
               disabled={updateGemblogMutation.isLoading}
             >
-              Update Gemstone Information
+              {updateGemblogMutation.isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating Gemstone Information...
+                </>
+              ) : (
+                "Update Gemstone Information"
+              )}
             </Button>
           </form>
         </CardContent>

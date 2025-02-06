@@ -10,13 +10,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AlertCircle, Upload } from "lucide-react";
+import { AlertCircle, Loader2, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
 import { useMutation } from "react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
 
 interface GemstoneFormData {
   name: string;
@@ -31,6 +32,7 @@ interface GemstoneFormData {
   faqs: string;
   curiousFacts: string;
   image?: File;
+  featured: boolean;
 }
 
 const GemstoneForm = () => {
@@ -46,18 +48,16 @@ const GemstoneForm = () => {
     specifications: "",
     faqs: "",
     curiousFacts: "",
+    featured: false,
   });
 
   const [imagePreview, setImagePreview] = useState<string>("");
-
   const navigateTo = useNavigate();
 
   const createGemblogMutation = useMutation({
     mutationFn: async () => {
-      // Create FormData instance to handle file upload
       const formDataToSend = new FormData();
-      
-      // Append all text fields
+
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'alternateNames') {
           formDataToSend.append(key, JSON.stringify(value));
@@ -65,17 +65,18 @@ const GemstoneForm = () => {
           formDataToSend.append(key, value as string);
         }
       });
-      
-      // Append the image if it exists
+
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
+
+      // Simulate a delay to show loading state (remove in production)
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const response = await fetch(
         `${import.meta.env.VITE_PROXY_URL}/gemstones/create-gemblog`,
         {
           method: "POST",
-          // Don't set Content-Type header - let the browser set it with boundary for FormData
           body: formDataToSend,
         }
       );
@@ -92,7 +93,10 @@ const GemstoneForm = () => {
         message: "Gemstone data submitted successfully!",
       });
 
-      toast.success("Gemstone data submitted successfully!", { position: "bottom-right", duration: 2000 });
+      toast.success("Gemstone data submitted successfully!", {
+        position: "bottom-right",
+        duration: 2000
+      });
       navigateTo("/home/gemblogs");
     },
     onError: (error: Error) => {
@@ -102,6 +106,7 @@ const GemstoneForm = () => {
       });
     },
   });
+
 
   const [submitStatus, setSubmitStatus] = useState<{
     type: "success" | "error" | "";
@@ -135,6 +140,7 @@ const GemstoneForm = () => {
       return newData;
     });
   };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -153,59 +159,12 @@ const GemstoneForm = () => {
     reader.readAsDataURL(file);
   };
 
-  const saveFormToJson = () => {
-    try {
-      // Create a copy of formData without the image for JSON export
-      const { image, ...dataForExport } = formData;
-      const jsonData = JSON.stringify(dataForExport, null, 2);
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "gemstone-data.json";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      setSubmitStatus({
-        type: "success",
-        message: "Data saved successfully!",
-      });
-    } catch (error) {
-      setSubmitStatus({
-        type: "error",
-        message: "Failed to save data",
-      });
-    }
+  const handleFeaturedToggle = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      featured: checked
+    }));
   };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonContent = JSON.parse(e.target?.result as string);
-        setFormData((prevData) => ({
-          ...prevData,
-          ...jsonContent,
-        }));
-        setSubmitStatus({
-          type: "success",
-          message: "Data loaded successfully!",
-        });
-      } catch (error) {
-        setSubmitStatus({
-          type: "error",
-          message: "Failed to load data",
-        });
-      }
-    };
-    reader.readAsText(file);
-  };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,12 +188,16 @@ const GemstoneForm = () => {
             }
           >
             {() => (
-              <FormattedPasteArea
-                content={content}
-                onChange={(newContent) =>
-                  handleInputChange("content", field, newContent)
-                }
-              />
+              <div 
+                className="min-h-[200px] rounded-lg overflow-auto focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
+              >
+                <FormattedPasteArea
+                  content={content}
+                  onChange={(newContent) => {
+                    handleInputChange("content", field, newContent);
+                  }}
+                />
+              </div>
             )}
           </ClientOnly>
         </CardContent>
@@ -346,6 +309,7 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
+              {/* Other Accordion Items */}
               <AccordionItem value="wearing">
                 <AccordionTrigger>Who Should Wear</AccordionTrigger>
                 <AccordionContent>
@@ -357,7 +321,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Benefits */}
               <AccordionItem value="benefits">
                 <AccordionTrigger>Benefits</AccordionTrigger>
                 <AccordionContent>
@@ -369,7 +332,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Prices */}
               <AccordionItem value="prices">
                 <AccordionTrigger>Prices</AccordionTrigger>
                 <AccordionContent>
@@ -381,7 +343,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Quality */}
               <AccordionItem value="quality">
                 <AccordionTrigger>Quality</AccordionTrigger>
                 <AccordionContent>
@@ -393,7 +354,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Specifications */}
               <AccordionItem value="specifications">
                 <AccordionTrigger>Specifications</AccordionTrigger>
                 <AccordionContent>
@@ -405,7 +365,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* FAQs */}
               <AccordionItem value="faqs">
                 <AccordionTrigger>FAQs</AccordionTrigger>
                 <AccordionContent>
@@ -417,7 +376,6 @@ const GemstoneForm = () => {
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Curious Facts */}
               <AccordionItem value="curiousFacts">
                 <AccordionTrigger>Curious Facts</AccordionTrigger>
                 <AccordionContent>
@@ -430,45 +388,28 @@ const GemstoneForm = () => {
               </AccordionItem>
             </Accordion>
 
-            <div className="flex gap-4 mt-6">
-              <Button type="button" onClick={saveFormToJson}>
-                Save to JSON
-              </Button>
-              <div>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  style={{ display: "none" }}
-                  id="jsonFileInput"
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    document.getElementById("jsonFileInput")?.click()
-                  }
-                >
-                  Load from JSON
-                </Button>
-              </div>
-            </div>
-
             {submitStatus.message && (
               <Alert
-                variant={
-                  submitStatus.type === "error" ? "destructive" : "default"
-                }
+                variant={submitStatus.type === "error" ? "destructive" : "default"}
               >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{submitStatus.message}</AlertDescription>
               </Alert>
             )}
 
-            <Button
+<Button
               type="submit"
               className="w-full"
+              disabled={createGemblogMutation.isLoading}
             >
-              Save Gemstone Information
+              {createGemblogMutation.isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving Gemstone Information...
+                </>
+              ) : (
+                "Save Gemstone Information"
+              )}
             </Button>
           </form>
         </CardContent>

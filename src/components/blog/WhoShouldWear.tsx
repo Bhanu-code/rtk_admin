@@ -4,10 +4,11 @@ import { Label } from "@/components/ui/label";
 import { ClientOnly } from 'remix-utils/client-only';
 import { Button } from '../ui/button';
 
-// interface FormattedPasteAreaProps {
-//   content: string;
-//   onChange: (content: string) => void;
-// }
+// Define our component props interface
+interface FormattedPasteAreaProps {
+  content: string;
+  onChange: (content: string) => void;
+}
 
 interface WhoShouldWearProps {
   formData: {
@@ -22,26 +23,44 @@ type HeadingSizes = {
   [key in 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6']: string;
 };
 
-export const FormattedPasteArea = ({ content, onChange }: { 
-  content: string; 
-  onChange: (content: string) => void; 
-}) => {
+export const FormattedPasteArea = ({ content, onChange }: FormattedPasteAreaProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   
-  // Update editor content when prop changes
+  // Synchronize the editor content with incoming props
   useEffect(() => {
-    if (editorRef.current && content) {
+    if (editorRef.current && content && !isFocused) {
       editorRef.current.innerHTML = content;
     }
-  }, [content]);
+  }, [content, isFocused]);
 
+  // Helper function to format plain text into HTML
+  const formatPlainText = (text: string): string => {
+    const lines = text.split('\n');
+    return lines.map(line => {
+      // Convert bullet points and dashes to list items
+      if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+        return `<li>${line.trim().substring(1).trim()}</li>`;
+      }
+      // Convert numbered points to ordered list items
+      if (/^\d+[\.\)]/.test(line.trim())) {
+        return `<li>${line.trim().replace(/^\d+[\.\)]/, '').trim()}</li>`;
+      }
+      // Convert short lines without periods to headings
+      if (line.trim().length > 0 && line.trim().length <= 50 && !line.includes('.')) {
+        return `<h3>${line.trim()}</h3>`;
+      }
+      // Default to paragraphs
+      return `<p>${line}</p>`;
+    }).join('');
+  };
 
-
+  // Helper function to sanitize HTML content
   const sanitizeHTML = (html: string): string => {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     
+    // Define allowed HTML elements and styles
     const allowedTags = [
       'p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'span',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'b', 'i', 'div'
@@ -59,19 +78,16 @@ export const FormattedPasteArea = ({ content, onChange }: {
       'list-style-type'
     ];
 
-    // We now cast the Element to HTMLElement to access style properties
+    // Apply consistent formatting to lists
     const preserveListFormatting = (node: Element): void => {
       const htmlNode = node as HTMLElement;
       if (node.tagName.toLowerCase() === 'ul' || node.tagName.toLowerCase() === 'ol') {
         htmlNode.style.paddingLeft = '24px';
-        if (node.tagName.toLowerCase() === 'ul') {
-          htmlNode.style.listStyleType = 'disc';
-        } else {
-          htmlNode.style.listStyleType = 'decimal';
-        }
+        htmlNode.style.listStyleType = node.tagName.toLowerCase() === 'ul' ? 'disc' : 'decimal';
       }
     };
 
+    // Apply consistent heading styles
     const preserveHeadingFormatting = (node: Element): void => {
       const htmlNode = node as HTMLElement;
       const tag = node.tagName.toLowerCase();
@@ -89,20 +105,24 @@ export const FormattedPasteArea = ({ content, onChange }: {
         htmlNode.style.margin = '1em 0 0.5em 0';
       }
     };
-    
+
+    // Clean and format HTML nodes
     const clean = (node: Element): Element => {
       if (node.nodeType === 1) {
         const tag = node.tagName.toLowerCase();
         
+        // Convert unsupported tags to paragraphs
         if (!allowedTags.includes(tag)) {
           const p = document.createElement('p');
           p.innerHTML = node.innerHTML;
           return p;
         }
         
+        // Apply formatting
         preserveListFormatting(node);
         preserveHeadingFormatting(node);
         
+        // Clean styles
         if (node.hasAttribute('style')) {
           const styles = node.getAttribute('style')?.split(';')
             .filter(style => {
@@ -117,7 +137,8 @@ export const FormattedPasteArea = ({ content, onChange }: {
           }
         }
         
-        Array.from(node.attributes).forEach((attr: Attr) => {
+        // Remove unsupported attributes
+        Array.from(node.attributes).forEach(attr => {
           if (!['style', 'data-list-type'].includes(attr.name)) {
             node.removeAttribute(attr.name);
           }
@@ -126,6 +147,7 @@ export const FormattedPasteArea = ({ content, onChange }: {
       return node;
     };
     
+    // Process all nodes in the document
     const walker = document.createTreeWalker(
       tempDiv,
       NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
@@ -143,33 +165,33 @@ export const FormattedPasteArea = ({ content, onChange }: {
     return tempDiv.innerHTML;
   };
 
+  // Handle content changes
+  const handleInput = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  // Handle paste events
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     
     const clipboardData = e.clipboardData;
     let pastedData = '';
     
+    // Process HTML content if available
     if (clipboardData.getData('text/html')) {
       pastedData = clipboardData.getData('text/html');
       pastedData = sanitizeHTML(pastedData);
+      // Ensure proper list formatting
       pastedData = pastedData.replace(/<ul>/g, '<ul style="list-style-type: disc; padding-left: 24px;">');
       pastedData = pastedData.replace(/<ol>/g, '<ol style="list-style-type: decimal; padding-left: 24px;">');
     } else {
+      // Process plain text content
       pastedData = clipboardData.getData('text/plain');
-      const lines = pastedData.split('\n');
-      pastedData = lines.map(line => {
-        if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-          return `<li>${line.trim().substring(1).trim()}</li>`;
-        }
-        if (/^\d+[\.\)]/.test(line.trim())) {
-          return `<li>${line.trim().replace(/^\d+[\.\)]/, '').trim()}</li>`;
-        }
-        if (line.trim().length > 0 && line.trim().length <= 50 && !line.includes('.')) {
-          return `<h3>${line.trim()}</h3>`;
-        }
-        return `<p>${line}</p>`;
-      }).join('');
+      pastedData = formatPlainText(pastedData);
       
+      // Wrap lists in proper containers
       pastedData = pastedData.replace(/<li>(?:(?!<\/li>).)*<\/li>/g, match => {
         if (match.includes('•') || match.includes('-')) {
           return `<ul style="list-style-type: disc; padding-left: 24px;">${match}</ul>`;
@@ -178,19 +200,25 @@ export const FormattedPasteArea = ({ content, onChange }: {
       });
     }
     
-    document.execCommand('insertHTML', false, pastedData);
+    // Insert content at cursor position
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
     
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+    if (range) {
+      range.deleteContents();
+      const div = document.createElement('div');
+      div.innerHTML = pastedData;
+      
+      const fragment = document.createDocumentFragment();
+      while (div.firstChild) {
+        fragment.appendChild(div.firstChild);
+      }
+      
+      range.insertNode(fragment);
+      range.collapse(false);
     }
-  };
-
-  
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+    
+    handleInput();
   };
 
   return (
@@ -200,7 +228,10 @@ export const FormattedPasteArea = ({ content, onChange }: {
       onPaste={handlePaste}
       onInput={handleInput}
       onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
+      onBlur={() => {
+        setIsFocused(false);
+        handleInput();
+      }}
       className={`min-h-[200px] p-4 border rounded-lg overflow-auto ${
         isFocused ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-200'
       }`}
@@ -212,6 +243,8 @@ export const FormattedPasteArea = ({ content, onChange }: {
     />
   );
 };
+
+// export default FormattedPasteArea;
 
 const WhoShouldWear = ({ formData, handleInputChange }: WhoShouldWearProps) => {
 

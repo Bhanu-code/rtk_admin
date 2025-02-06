@@ -23,7 +23,7 @@ interface ProductFormData {
   sec_img1: File | null;  // Changed from sec_img1_url
   sec_img2: File | null;  // Changed from sec_img2_url
   sec_img3: File | null;  // Changed from sec_img3_url
-  product_vid: File | null; 
+  product_vid: File | null;
   cert_img_url: string;
   name: string;
   description: string | null;
@@ -75,7 +75,7 @@ const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
     }
 
     // Create preview URL
-    const objectUrl:any = URL.createObjectURL(file);
+    const objectUrl: any = URL.createObjectURL(file);
     setPreview(objectUrl);
 
     // Cleanup
@@ -87,15 +87,15 @@ const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
   return (
     <div className="relative">
       {file?.type.startsWith('image/') ? (
-        <img 
-          src={preview} 
-          alt="Preview" 
+        <img
+          src={preview}
+          alt="Preview"
           className="w-full h-32 object-contain  rounded-md"
         />
       ) : (
-        <video 
-          src={preview} 
-          className="w-full h-32 object-contain rounded-md" 
+        <video
+          src={preview}
+          className="w-full h-32 object-contain rounded-md"
           controls
         />
       )}
@@ -162,21 +162,21 @@ const AddProductForm = () => {
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
-    
+
     // Append regular form fields
     Object.keys(formData).forEach(key => {
       if (!key.includes('_url')) {
         formDataToSend.append(key, String(formData[key as keyof ProductFormData]));
       }
     });
-  
+
     // Handle file uploads with correct field names
     if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
     if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
     if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
     if (formData.sec_img3) formDataToSend.append('sec_img3', formData.sec_img3);
     if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
-  
+
     return formDataToSend;
   };
 
@@ -187,10 +187,11 @@ const AddProductForm = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
+      
       [name]: value,
     }));
   };
-
+  
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     fieldName: keyof ProductFormData
@@ -216,9 +217,9 @@ const AddProductForm = () => {
   const createProductMutation = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error('Authentication token is missing');
-  
+
       const formDataToSend = createFormDataWithFiles();
-  
+
       const response = await userRequest({
         url: "/product/create-product",
         method: "POST",
@@ -228,7 +229,7 @@ const AddProductForm = () => {
           'Content-Type': 'multipart/form-data',
         }
       });
-  
+
       return response.data;
     },
     onSuccess: () => {
@@ -352,15 +353,15 @@ const AddProductForm = () => {
 
             {/* Images and Media */}
             <div className="space-y-4">
-          <h3 className="text-lg font-medium">Images and Media</h3>
-          <div className="grid grid-cols-2 gap-4">
-  {renderFileInput("base_img", "Base Image", "image/*")}
-  {renderFileInput("sec_img1", "Secondary Image 1", "image/*")}
-  {renderFileInput("sec_img2", "Secondary Image 2", "image/*")}
-  {renderFileInput("sec_img3", "Secondary Image 3", "image/*")}
-  {renderFileInput("product_vid", "Product Video", "video/*")}
-</div>
-        </div>
+              <h3 className="text-lg font-medium">Images and Media</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {renderFileInput("base_img", "Base Image", "image/*")}
+                {renderFileInput("sec_img1", "Secondary Image 1", "image/*")}
+                {renderFileInput("sec_img2", "Secondary Image 2", "image/*")}
+                {renderFileInput("sec_img3", "Secondary Image 3", "image/*")}
+                {renderFileInput("product_vid", "Product Video", "video/*")}
+              </div>
+            </div>
 
             {/* Physical Properties */}
             <div className="space-y-4">
@@ -371,7 +372,7 @@ const AddProductForm = () => {
                   <Input
                     id="weight_gms"
                     name="weight_gms"
-                    type="number"
+                    type="text"
                     value={formData.weight_gms}
                     onChange={handleInputChange}
                   />
@@ -381,7 +382,7 @@ const AddProductForm = () => {
                   <Input
                     id="weight_carat"
                     name="weight_carat"
-                    type="number"
+                    type="text"
                     value={formData.weight_carat}
                     onChange={handleInputChange}
                   />
@@ -391,7 +392,7 @@ const AddProductForm = () => {
                   <Input
                     id="weight_ratti"
                     name="weight_ratti"
-                    type="number"
+                    type="text"
                     value={formData.weight_ratti}
                     onChange={handleInputChange}
                   />
@@ -426,7 +427,7 @@ const AddProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Characteristics</h3>
               <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="shape">Shape</Label>
                   <Input
                     id="shape"
@@ -501,30 +502,30 @@ const AddProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Pricing</h3>
               <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="actual_price">Actual Price</Label>
-                <Input
-                  id="actual_price"
-                  name="actual_price"
-                  type="number"
-                  value={formData.actual_price}
-                  onChange={handlePriceChange}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
                 <div className="space-y-2">
-                <Label htmlFor="sale_price">Sale Price</Label>
-                <Input
-                  id="sale_price"
-                  name="sale_price"
-                  type="number"
-                  value={formData.sale_price}
-                  onChange={handlePriceChange}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
+                  <Label htmlFor="actual_price">Actual Price</Label>
+                  <Input
+                    id="actual_price"
+                    name="actual_price"
+                    type="number"
+                    value={formData.actual_price}
+                    onChange={handlePriceChange}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sale_price">Sale Price</Label>
+                  <Input
+                    id="sale_price"
+                    name="sale_price"
+                    type="number"
+                    value={formData.sale_price}
+                    onChange={handlePriceChange}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity</Label>
                   <Input
@@ -538,8 +539,8 @@ const AddProductForm = () => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
             >
               Add Product
