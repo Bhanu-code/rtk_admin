@@ -159,12 +159,12 @@ const GemstoneForm = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleFeaturedToggle = (checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      featured: checked
-    }));
-  };
+  // const handleFeaturedToggle = (checked: boolean) => {
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     featured: checked
+  //   }));
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
