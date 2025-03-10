@@ -25,6 +25,7 @@ import EditProductPage from "./pages/Products/EditProductPage";
 import Orders from "./pages/Orders/Orders";
 import Astrologers from "./pages/Astrology/Astrologers";
 import Appointments from "./pages/Astrology/Appointments";
+import NavbarOffer from "./pages/NavbarOffer/NavbarOffer";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -134,6 +135,10 @@ function App() {
         {
           path: "/home/appointments",
           element: <Appointments />,
+        },
+        {
+          path: "/home/navbaroffer",
+          element: <NavbarOffer />,
         },
         
       ],

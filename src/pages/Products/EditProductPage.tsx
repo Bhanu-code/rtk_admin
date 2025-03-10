@@ -506,6 +506,7 @@ const EditProductForm = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Feature">Feature</SelectItem>
                     <SelectItem value="Public">Public</SelectItem>
                   </SelectContent>
                 </Select>
