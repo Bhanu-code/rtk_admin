@@ -47,5 +47,10 @@ export const tabs = [
         tab_name: "Gemblogs",
         link: "/home/gemblogs",
         type: "tab"
+    },
+    {
+        tab_name: "Offer Bar",
+        link: "/home/navbaroffer",
+        type: "tab"
     }
 ]
