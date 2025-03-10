@@ -1,13 +1,17 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ClientOnly } from 'remix-utils/client-only';
 import { Button } from '../ui/button';
 
-// interface FormattedPasteAreaProps {
-//   content: string;
-//   onChange: (content: string) => void;
-// }
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+// Define our component props interface
+interface FormattedPasteAreaProps {
+  content: string;
+  onChange: (content: string) => void;
+}
 
 interface WhoShouldWearProps {
   formData: {
@@ -18,200 +22,167 @@ interface WhoShouldWearProps {
   handleInputChange: (section: string, field: string, value: string) => void;
 }
 
-type HeadingSizes = {
-  [key in 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6']: string;
-};
+// type HeadingSizes = {
+//   [key in 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6']: string;
+// };
 
-export const FormattedPasteArea = ({ content, onChange }: { 
-  content: string; 
-  onChange: (content: string) => void; 
-}) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
-  
-  // Update editor content when prop changes
+const FormattedPasteArea = ({ content, onChange }: FormattedPasteAreaProps) => {
+  const quillRef = useRef(null);
+  const [localContent, setLocalContent] = useState(content);
+  const isInternalChange = useRef(false);
+  const prevContentRef = useRef(content);
+
+  // Update local content only when external content changes
   useEffect(() => {
-    if (editorRef.current && content) {
-      editorRef.current.innerHTML = content;
+    if (content !== prevContentRef.current && !isInternalChange.current) {
+      setLocalContent(content);
+      prevContentRef.current = content;
     }
+    isInternalChange.current = false;
   }, [content]);
 
-
-
-  const sanitizeHTML = (html: string): string => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    const allowedTags = [
-      'p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'span',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'b', 'i', 'div'
-    ];
-    
-    const allowedStyles = [
-      'font-weight',
-      'font-style',
-      'text-decoration',
-      'color',
-      'background-color',
-      'text-align',
-      'margin-left',
-      'padding-left',
-      'list-style-type'
-    ];
-
-    // We now cast the Element to HTMLElement to access style properties
-    const preserveListFormatting = (node: Element): void => {
-      const htmlNode = node as HTMLElement;
-      if (node.tagName.toLowerCase() === 'ul' || node.tagName.toLowerCase() === 'ol') {
-        htmlNode.style.paddingLeft = '24px';
-        if (node.tagName.toLowerCase() === 'ul') {
-          htmlNode.style.listStyleType = 'disc';
-        } else {
-          htmlNode.style.listStyleType = 'decimal';
-        }
-      }
-    };
-
-    const preserveHeadingFormatting = (node: Element): void => {
-      const htmlNode = node as HTMLElement;
-      const tag = node.tagName.toLowerCase();
-      if (tag.match(/^h[1-6]$/)) {
-        const sizes: HeadingSizes = {
-          h1: '2rem',
-          h2: '1.75rem',
-          h3: '1.5rem',
-          h4: '1.25rem',
-          h5: '1.1rem',
-          h6: '1rem'
-        };
-        htmlNode.style.fontSize = sizes[tag as keyof HeadingSizes];
-        htmlNode.style.fontWeight = 'bold';
-        htmlNode.style.margin = '1em 0 0.5em 0';
-      }
-    };
-    
-    const clean = (node: Element): Element => {
-      if (node.nodeType === 1) {
-        const tag = node.tagName.toLowerCase();
-        
-        if (!allowedTags.includes(tag)) {
-          const p = document.createElement('p');
-          p.innerHTML = node.innerHTML;
-          return p;
-        }
-        
-        preserveListFormatting(node);
-        preserveHeadingFormatting(node);
-        
-        if (node.hasAttribute('style')) {
-          const styles = node.getAttribute('style')?.split(';')
-            .filter(style => {
-              const prop = style.split(':')[0]?.trim();
-              return prop ? allowedStyles.includes(prop) : false;
-            })
-            .join(';');
-          if (styles) {
-            node.setAttribute('style', styles);
-          } else {
-            node.removeAttribute('style');
-          }
-        }
-        
-        Array.from(node.attributes).forEach((attr: Attr) => {
-          if (!['style', 'data-list-type'].includes(attr.name)) {
-            node.removeAttribute(attr.name);
-          }
-        });
-      }
-      return node;
-    };
-    
-    const walker = document.createTreeWalker(
-      tempDiv,
-      NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-      null
-    );
-    
-    let node: Node | null;
-    while (node = walker.nextNode()) {
-      if (node instanceof Element) {
-        const cleanNode = clean(node);
-        node.parentNode?.replaceChild(cleanNode, node);
-      }
-    }
-    
-    return tempDiv.innerHTML;
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    
-    const clipboardData = e.clipboardData;
-    let pastedData = '';
-    
-    if (clipboardData.getData('text/html')) {
-      pastedData = clipboardData.getData('text/html');
-      pastedData = sanitizeHTML(pastedData);
-      pastedData = pastedData.replace(/<ul>/g, '<ul style="list-style-type: disc; padding-left: 24px;">');
-      pastedData = pastedData.replace(/<ol>/g, '<ol style="list-style-type: decimal; padding-left: 24px;">');
-    } else {
-      pastedData = clipboardData.getData('text/plain');
-      const lines = pastedData.split('\n');
-      pastedData = lines.map(line => {
-        if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
-          return `<li>${line.trim().substring(1).trim()}</li>`;
-        }
-        if (/^\d+[\.\)]/.test(line.trim())) {
-          return `<li>${line.trim().replace(/^\d+[\.\)]/, '').trim()}</li>`;
-        }
-        if (line.trim().length > 0 && line.trim().length <= 50 && !line.includes('.')) {
-          return `<h3>${line.trim()}</h3>`;
-        }
-        return `<p>${line}</p>`;
-      }).join('');
+  // Debounced change handler to reduce re-renders
+  const handleEditorChange = useCallback(
+    (newContent:any) => {
+      isInternalChange.current = true;
+      setLocalContent(newContent);
+      prevContentRef.current = newContent;
       
-      pastedData = pastedData.replace(/<li>(?:(?!<\/li>).)*<\/li>/g, match => {
-        if (match.includes('•') || match.includes('-')) {
-          return `<ul style="list-style-type: disc; padding-left: 24px;">${match}</ul>`;
+      if (typeof onChange === 'function') {
+        onChange(newContent);
+      }
+    },
+    [onChange]
+  );
+
+  // Memoize the modules configuration
+  const modules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['blockquote', 'code-block'],
+      ['link'],
+      ['clean']
+    ],
+    clipboard: {
+      matchVisual: false
+    },
+    keyboard: {
+      bindings: {
+        tab: {
+          key: 9,
+          handler: () => true
         }
-        return `<ol style="list-style-type: decimal; padding-left: 24px;">${match}</ol>`;
-      });
+      }
     }
-    
-    document.execCommand('insertHTML', false, pastedData);
-    
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
+  }), []);
 
-  
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'list', 'bullet',
+    'align',
+    'blockquote', 'code-block',
+    'link'
+  ];
 
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+  // Handle external content updates
+  useEffect(() => {
+    if (content !== prevContentRef.current && !isInternalChange.current) {
+      setLocalContent(content);
+      prevContentRef.current = content;
     }
-  };
+    isInternalChange.current = false;
+  }, [content]);
+
+  // Improved change handler with debouncing
+  // const handleEditorChange = useCallback((newContent) => {
+  //   isInternalChange.current = true;
+  //   setLocalContent(newContent);
+  //   if (typeof onChange === 'function') {
+  //     onChange(newContent);
+  //   }
+  // }, [onChange]);
 
   return (
-    <div
-      ref={editorRef}
-      contentEditable
-      onPaste={handlePaste}
-      onInput={handleInput}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      className={`min-h-[200px] p-4 border rounded-lg overflow-auto ${
-        isFocused ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-200'
-      }`}
-      style={{
-        outline: 'none',
-        lineHeight: '1.5',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-      }}
-    />
+    <div className="formatted-paste-area">
+      <style>
+        {`
+          .formatted-paste-area .quill {
+            border-radius: 0.375rem;
+          }
+          .formatted-paste-area .ql-editor {
+            min-height: 200px;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            background: white;
+          }
+          .formatted-paste-area .ql-toolbar {
+            border-top-left-radius: 0.375rem;
+            border-top-right-radius: 0.375rem;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+          }
+          .formatted-paste-area .ql-container {
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-bottom-left-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+            font-size: 16px;
+            height: auto;
+            min-height: 200px;
+          }
+          .formatted-paste-area .ql-snow .ql-tooltip {
+            background-color: #fff;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border-radius: 0.375rem;
+          }
+          .formatted-paste-area .ql-snow .ql-picker {
+            color: #374151;
+          }
+          .formatted-paste-area .ql-snow .ql-stroke {
+            stroke: #374151;
+          }
+          .formatted-paste-area .ql-snow .ql-fill {
+            fill: #374151;
+          }
+          .formatted-paste-area .ql-snow.ql-toolbar button:hover,
+          .formatted-paste-area .ql-snow .ql-toolbar button:hover {
+            color: #2563eb;
+          }
+          .formatted-paste-area .ql-snow.ql-toolbar button:hover .ql-stroke,
+          .formatted-paste-area .ql-snow .ql-toolbar button:hover .ql-stroke {
+            stroke: #2563eb;
+          }
+          .formatted-paste-area .ql-snow.ql-toolbar button:hover .ql-fill,
+          .formatted-paste-area .ql-snow .ql-toolbar button:hover .ql-fill {
+            fill: #2563eb;
+          }
+        `}
+      </style>
+      <ReactQuill
+        ref={quillRef}
+        theme="snow"
+        value={localContent}
+        onChange={handleEditorChange}
+        modules={modules}
+        formats={formats}
+        preserveWhitespace
+      />
+    </div>
   );
 };
+
+export default FormattedPasteArea;
+// export FormattedPasteArea;
 
 const WhoShouldWear = ({ formData, handleInputChange }: WhoShouldWearProps) => {
 
@@ -306,4 +277,4 @@ const WhoShouldWear = ({ formData, handleInputChange }: WhoShouldWearProps) => {
   );
 };
 
-export default WhoShouldWear;
+export  {WhoShouldWear ,FormattedPasteArea} ;

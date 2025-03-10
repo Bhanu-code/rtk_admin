@@ -1,22 +1,25 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2, Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
 import { useMutation, useQuery } from "react-query";
+import { toast } from "sonner";
 
 interface GemstoneFormData {
+  id?: string;
   name: string;
   alternateNames: string[];
   shortBenefits: string;
@@ -28,17 +31,23 @@ interface GemstoneFormData {
   specifications: string;
   faqs: string;
   curiousFacts: string;
+  featured: boolean;
+  imageUrl?: string;
+  newImage?: File;
+  timestamp?: string;
 }
+
 
 interface EditGemstoneFormProps {
   gemstoneId: any;
   onSuccess?: () => void;
 }
 
+
 const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
   const [formData, setFormData] = useState<GemstoneFormData>({
     name: "",
-    alternateNames: [""],
+    alternateNames: [],
     shortBenefits: "",
     description: "",
     whoShouldWear: "",
@@ -48,62 +57,111 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
     specifications: "",
     faqs: "",
     curiousFacts: "",
+    featured: false,
+    imageUrl: "",
   });
 
+  const [imagePreview, setImagePreview] = useState<string>("");
+
   // Fetch existing gemstone data
-  const { data: gemstoneData, isLoading } = useQuery(
+  const { data: gemstoneData, isLoading: isLoadingData } = useQuery(
     ["gemstone", gemstoneId],
     async () => {
       const response = await fetch(
-        `${import.meta.env.VITE_PROXY_URL}/gemstones/get-gemblog/${gemstoneId}/`
+        `${import.meta.env.VITE_PROXY_URL}/gemstones/get-gemblog/${gemstoneId}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch gemstone data");
       }
-      return response.json();
+      const data = await response.json();
+
+      // Parse alternateNames if it's a string
+      if (typeof data.alternateNames === 'string') {
+        try {
+          data.alternateNames = JSON.parse(data.alternateNames);
+        } catch (e) {
+          console.error('Error parsing alternateNames:', e);
+          data.alternateNames = [];
+        }
+      }
+
+      // Ensure alternateNames is always an array
+      if (!Array.isArray(data.alternateNames)) {
+        data.alternateNames = [];
+      }
+
+      return data;
     }
   );
+
+  console.log("DATA : ", gemstoneData)
 
   // Update form data when gemstone data is fetched
   useEffect(() => {
     if (gemstoneData) {
-      setFormData({
-        name: gemstoneData.name || "",
-        alternateNames: gemstoneData.alternateNames || [""],
-        shortBenefits: gemstoneData.shortBenefits || "",
-        description: gemstoneData.description || "",
-        whoShouldWear: gemstoneData.whoShouldWear || "",
-        benefits: gemstoneData.benefits || "",
-        prices: gemstoneData.prices || "",
-        quality: gemstoneData.quality || "",
-        specifications: gemstoneData.specifications || "",
-        faqs: gemstoneData.faqs || "",
-        curiousFacts: gemstoneData.curiousFacts || "",
-      });
+      setFormData(prev => ({
+        ...prev,
+        ...gemstoneData,
+        // Ensure alternateNames is always an array
+        alternateNames: Array.isArray(gemstoneData.alternateNames)
+          ? gemstoneData.alternateNames
+          : []
+      }));
+
+      if (gemstoneData.imageUrl) {
+        setImagePreview(gemstoneData.imageUrl);
+      }
     }
   }, [gemstoneData]);
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Update form data with the new image file
+    setFormData(prev => ({
+      ...prev,
+      newImage: file
+    }));
+
+    // Create and set image preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+
   const updateGemblogMutation = useMutation({
     mutationFn: async () => {
-      const gemBlogData = {
-        name: formData.name,
-        description: formData.description,
-        shortBenefits: formData.shortBenefits,
-        whoShouldWear: formData.whoShouldWear,
-        benefits: formData.benefits,
-        prices: formData.prices,
-        quality: formData.quality,
-        specifications: formData.specifications,
-        faqs: formData.faqs,
-        curiousFacts: formData.curiousFacts,
-      };
+      const formDataToSend = new FormData();
+
+      // Clean and prepare alternateNames
+      const cleanedAlternateNames = formData.alternateNames
+        .filter(name => name.trim() !== "")
+        .map(name => name.trim());
+
+      // Append all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'alternateNames') {
+          // Send alternateNames as a JSON string
+          formDataToSend.append(key, JSON.stringify(cleanedAlternateNames));
+        } else if (key !== 'newImage' && key !== 'imageUrl') {
+          formDataToSend.append(key, String(value));
+        }
+      });
+
+      // Handle image upload
+      if (formData.newImage) {
+        formDataToSend.append('image', formData.newImage);
+      }
 
       const response = await fetch(
         `${import.meta.env.VITE_PROXY_URL}/gemstones/update-gemblog/${gemstoneId}/`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(gemBlogData),
+          body: formDataToSend,
         }
       );
 
@@ -118,6 +176,10 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         type: "success",
         message: "Gemstone data updated successfully!",
       });
+      toast.success("Gemstone updated successfully!", {
+        position: "bottom-right",
+        duration: 2000
+      });
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -125,8 +187,36 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         type: "error",
         message: error.message,
       });
+      toast.error("Failed to update gemstone", {
+        position: "bottom-right",
+        duration: 2000
+      });
     },
   });
+
+
+  const handleAddAlternateName = () => {
+    setFormData(prev => ({
+      ...prev,
+      alternateNames: [...prev.alternateNames, ""]
+    }));
+  };
+
+  // Remove alternate name field handler
+  const handleRemoveAlternateName = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      alternateNames: prev.alternateNames.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+
+  const handleFeaturedToggle = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      featured: checked
+    }));
+  };
 
   const [submitStatus, setSubmitStatus] = useState<{
     type: "success" | "error" | "";
@@ -137,30 +227,26 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
   });
 
   // Rest of the component remains the same as GemstoneForm
-  const handleInputChange = (
-    section: string,
-    field: string,
-    value: string,
-    index?: number
-  ) => {
-    setFormData((prev) => {
-      const newData = { ...prev };
-
-      if (section === "basic") {
-        if (field === "alternateNames" && index !== undefined) {
-          const newNames = [...newData.alternateNames];
-          newNames[index] = value;
-          newData.alternateNames = newNames;
-        } else {
-          (newData as any)[field] = value;
+  const handleInputChange = useCallback(
+    (_section: string, field: keyof GemstoneFormData, value: string, index?: number) => {
+      setFormData((prev) => {
+        if (field === "alternateNames" && typeof index === "number") {
+          const newAlternateNames = [...prev.alternateNames];
+          newAlternateNames[index] = value;
+          return {
+            ...prev,
+            alternateNames: newAlternateNames
+          };
         }
-      } else {
-        (newData as any)[field] = value;
-      }
-
-      return newData;
-    });
-  };
+        
+        return {
+          ...prev,
+          [field]: value
+        };
+      });
+    },
+    []
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,43 +254,44 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
   };
 
   // Same renderFormattedSection function as before
-  const renderFormattedSection = (
-    title: string,
-    content: string,
-    field: string
-  ) => (
-    <div className="space-y-4">
-      <Label className="text-base font-medium">{title}</Label>
-      <Card>
-        <CardContent className="pt-4">
-          <ClientOnly
-            fallback={
-              <div className="h-[200px] flex items-center justify-center bg-gray-50">
-                Loading editor...
-              </div>
-            }
-          >
-            {() => (
-              <FormattedPasteArea
-                content={content}
-                onChange={(newContent) =>
-                  handleInputChange("content", field, newContent)
-                }
-              />
-            )}
-          </ClientOnly>
-        </CardContent>
-      </Card>
-    </div>
+  const MemoizedFormattedPasteArea = React.memo(FormattedPasteArea);
+
+  const renderFormattedSection = useCallback(
+    (title: string, content: string, field: keyof GemstoneFormData) => (
+      <div className="space-y-4" key={`${field}-section`}>
+        <Label className="text-base font-medium">{title}</Label>
+        <Card>
+          <CardContent className="pt-4">
+            <ClientOnly
+              fallback={
+                <div className="h-[200px] flex items-center justify-center bg-gray-50">
+                  Loading editor...
+                </div>
+              }
+            >
+              {() => (
+                <MemoizedFormattedPasteArea
+                  key={field}
+                  content={content || ''}
+                  onChange={(newContent) => handleInputChange(field, field, newContent)}
+                />
+              )}
+            </ClientOnly>
+          </CardContent>
+        </Card>
+      </div>
+    ),
+    [handleInputChange]
   );
 
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Card>
           <CardContent className="p-8">
-            <div className="flex items-center justify-center">
-              Loading gemstone data...
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-lg text-muted-foreground">Loading gemstone data...</p>
             </div>
           </CardContent>
         </Card>
@@ -221,7 +308,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Same Accordion structure as before */}
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="multiple" className="w-full">
               {/* Basic Information */}
               <AccordionItem value="basic">
                 <AccordionTrigger>Basic Information</AccordionTrigger>
@@ -235,6 +322,50 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
                       }
                       placeholder="Enter gemstone name"
                     />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Label>Featured on Home Page</Label>
+                    <Switch
+                      checked={formData.featured}
+                      onCheckedChange={handleFeaturedToggle}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {formData.featured
+                        ? "This gemstone will be shown on the home page"
+                        : "This gemstone will not be featured on the home page"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Gemstone Image</Label>
+                    <div className="flex flex-col items-center p-4 border-2 border-dashed rounded-lg">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="imageUpload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('imageUpload')?.click()}
+                        className="mb-2"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {imagePreview ? 'Change Image' : 'Upload Image'}
+                      </Button>
+                      {imagePreview && (
+                        <div className="mt-4">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="max-w-xs rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -255,23 +386,37 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
                   <div>
                     <Label>Alternate Names</Label>
                     {formData.alternateNames.map((name, index) => (
-                      <Input
-                        key={index}
-                        value={name}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "basic",
-                            "alternateNames",
-                            e.target.value,
-                            index
-                          )
-                        }
-                        placeholder="Enter alternate name"
-                        className="mt-2"
-                      />
+                      <div key={index} className="flex gap-2 mt-2">
+                        <Input
+                          value={name}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "basic",
+                              "alternateNames",
+                              e.target.value,
+                              index
+                            )
+                          }
+                          placeholder="Enter alternate name"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleRemoveAlternateName(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-2"
+                      onClick={handleAddAlternateName}
+                    >
+                      Add Another Name
+                    </Button>
                   </div>
-
                   <div>
                     <Label>Short Benefits</Label>
                     <Input
@@ -366,9 +511,7 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
 
             {submitStatus.message && (
               <Alert
-                variant={
-                  submitStatus.type === "error" ? "destructive" : "default"
-                }
+                variant={submitStatus.type === "error" ? "destructive" : "default"}
               >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{submitStatus.message}</AlertDescription>
@@ -380,7 +523,14 @@ const EditGemstoneForm = ({ gemstoneId, onSuccess }: EditGemstoneFormProps) => {
               className="w-full"
               disabled={updateGemblogMutation.isLoading}
             >
-              Update Gemstone Information
+              {updateGemblogMutation.isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating Gemstone Information...
+                </>
+              ) : (
+                "Update Gemstone Information"
+              )}
             </Button>
           </form>
         </CardContent>

@@ -65,6 +65,8 @@ const Appointments = () => {
     });
   };
 
+  
+
   return (
     <div className="p-8">
       <Card className="w-full">
