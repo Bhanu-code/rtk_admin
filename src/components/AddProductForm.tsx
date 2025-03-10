@@ -19,11 +19,11 @@ import { useSelector } from "react-redux";
 import { X } from "lucide-react";
 
 interface ProductFormData {
-  base_img: File | null;  // Changed from base_img_url
-  sec_img1: File | null;  // Changed from sec_img1_url
-  sec_img2: File | null;  // Changed from sec_img2_url
-  sec_img3: File | null;  // Changed from sec_img3_url
-  product_vid: File | null; 
+  base_img: File | null; // Changed from base_img_url
+  sec_img1: File | null; // Changed from sec_img1_url
+  sec_img2: File | null; // Changed from sec_img2_url
+  sec_img3: File | null; // Changed from sec_img3_url
+  product_vid: File | null;
   cert_img_url: string;
   name: string;
   description: string | null;
@@ -38,15 +38,31 @@ interface ProductFormData {
   weight_ratti: number;
   length: number;
   width: number;
+  height: number;
   shape: string;
   cut: string;
   treatment: string;
   composition: string;
   certification: string;
   color: string;
+  transparency: string;
+  ref_index: string;
+  sp_gravity: string;
+  other_chars: string;
+  visual_chars: string;
+  inclusion: string;
+  species: string;
+  gravity: string;
+  hardness: string;
+  variety: string;
 }
 
-type FileFields = 'base_img' | 'sec_img1' | 'sec_img2' | 'sec_img3' | 'product_vid';
+type FileFields =
+  | "base_img"
+  | "sec_img1"
+  | "sec_img2"
+  | "sec_img3"
+  | "product_vid";
 
 // const isFileField = (key: string): key is FileFields => {
 //   return ['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid'].includes(key);
@@ -75,7 +91,7 @@ const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
     }
 
     // Create preview URL
-    const objectUrl:any = URL.createObjectURL(file);
+    const objectUrl: any = URL.createObjectURL(file);
     setPreview(objectUrl);
 
     // Cleanup
@@ -86,16 +102,16 @@ const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
 
   return (
     <div className="relative">
-      {file?.type.startsWith('image/') ? (
-        <img 
-          src={preview} 
-          alt="Preview" 
+      {file?.type.startsWith("image/") ? (
+        <img
+          src={preview}
+          alt="Preview"
           className="w-full h-32 object-contain  rounded-md"
         />
       ) : (
-        <video 
-          src={preview} 
-          className="w-full h-32 object-contain rounded-md" 
+        <video
+          src={preview}
+          className="w-full h-32 object-contain rounded-md"
           controls
         />
       )}
@@ -109,6 +125,30 @@ const FilePreview = ({ file, onRemove }: FilePreviewProps) => {
   );
 };
 
+function extractDimensions(input: any) {
+  if (typeof input !== "string") {
+    return null;
+  }
+
+  // Regular expression to match the pattern
+  // This matches digits, followed by 'x' or 'X', followed by digits, etc.
+  const regex = /^(\d+)[xX](\d+)[xX](\d+)$/;
+
+  // Test the input against the pattern
+  const match = input.match(regex);
+
+  // If no match found, return null
+  if (!match) {
+    return null;
+  }
+
+  // Extract and convert dimensions to numbers
+  return {
+    length: parseInt(match[1], 10),
+    breadth: parseInt(match[2], 10),
+    height: parseInt(match[3], 10),
+  };
+}
 
 const validateProduct = (formData: ProductFormData) => {
   const errors: string[] = [];
@@ -128,8 +168,6 @@ const validateProduct = (formData: ProductFormData) => {
 
   return errors;
 };
-
-
 
 const AddProductForm = () => {
   const [formData, setFormData] = React.useState<ProductFormData>({
@@ -152,43 +190,62 @@ const AddProductForm = () => {
     weight_ratti: 0,
     length: 0,
     width: 0,
+    height: 0,
     shape: "", // Now a free text input
     cut: "", // Now a free text input
     treatment: "",
     composition: "",
     certification: "",
     color: "",
+    transparency: "",
+    ref_index: "",
+    sp_gravity: "",
+    other_chars: "",
+    visual_chars: "",
+    inclusion: "",
+    species: "",
+    gravity: "",
+    hardness: "",
+    variety: "",
   });
 
   const createFormDataWithFiles = () => {
     const formDataToSend = new FormData();
-    
+
     // Append regular form fields
-    Object.keys(formData).forEach(key => {
-      if (!key.includes('_url')) {
-        formDataToSend.append(key, String(formData[key as keyof ProductFormData]));
+    Object.keys(formData).forEach((key) => {
+      if (!key.includes("_url")) {
+        formDataToSend.append(
+          key,
+          String(formData[key as keyof ProductFormData])
+        );
       }
     });
-  
+
     // Handle file uploads with correct field names
-    if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
-    if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
-    if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
-    if (formData.sec_img3) formDataToSend.append('sec_img3', formData.sec_img3);
-    if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
-  
+    if (formData.base_img) formDataToSend.append("base_img", formData.base_img);
+    if (formData.sec_img1) formDataToSend.append("sec_img1", formData.sec_img1);
+    if (formData.sec_img2) formDataToSend.append("sec_img2", formData.sec_img2);
+    if (formData.sec_img3) formDataToSend.append("sec_img3", formData.sec_img3);
+    if (formData.product_vid)
+      formDataToSend.append("product_video", formData.product_vid);
+
     return formDataToSend;
   };
-
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    name === "weight_gms" || name === "weight_ratti" || name === "weight_carat"
+      ? setFormData((prev) => ({
+          ...prev,
+          [name]: Number(value),
+        }))
+      : setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
   };
 
   const handleFileChange = (
@@ -215,37 +272,41 @@ const AddProductForm = () => {
 
   const createProductMutation = useMutation({
     mutationFn: async () => {
-      if (!token) throw new Error('Authentication token is missing');
-  
+      if (!token) throw new Error("Authentication token is missing");
+
       const formDataToSend = createFormDataWithFiles();
-  
+
       const response = await userRequest({
         url: "/product/create-product",
         method: "POST",
         data: formDataToSend,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
-  
+
       return response.data;
     },
     onSuccess: () => {
       toast.success("Product created successfully!", {
         position: "bottom-right",
-        duration: 2000
+        duration: 2000,
       });
     },
     onError: (error: Error) => {
       toast.error(error.message, {
         position: "bottom-right",
-        duration: 2000
+        duration: 2000,
       });
-    }
+    },
   });
 
-  const renderFileInput = (fieldName: FileFields, label: string, accept: string) => (
+  const renderFileInput = (
+    fieldName: FileFields,
+    label: string,
+    accept: string
+  ) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName}>{label}</Label>
       <div className="space-y-2">
@@ -265,19 +326,20 @@ const AddProductForm = () => {
   );
 
   const handleFileRemove = (fieldName: keyof ProductFormData) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: null
+      [fieldName]: null,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("formData", formData);
     const validationErrors = validateProduct(formData);
     if (validationErrors.length > 0) {
       toast.error(validationErrors.join("\n"), {
         position: "bottom-right",
-        duration: 2000
+        duration: 2000,
       });
       return;
     }
@@ -287,7 +349,22 @@ const AddProductForm = () => {
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numValue = Number(value);
-    setFormData(prev => ({ ...prev, [name]: numValue }));
+    setFormData((prev) => ({ ...prev, [name]: numValue }));
+  };
+
+  const [lbh, setlbh] = useState("");
+
+  const handlelbhChange = (lbh: any) => {
+    setlbh(lbh);
+    const dimensions: any = extractDimensions(lbh);
+
+    formData.length = Number(dimensions.length);
+    formData.width = Number(dimensions.breadth);
+    formData.height = Number(dimensions.height);
+
+    console.log(dimensions.length);
+    console.log(dimensions.breadth);
+    console.log(dimensions.height);
   };
 
   return (
@@ -314,7 +391,9 @@ const AddProductForm = () => {
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select
-                    onValueChange={(value) => handleSelectChange("category", value)}
+                    onValueChange={(value) =>
+                      handleSelectChange("category", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -352,15 +431,15 @@ const AddProductForm = () => {
 
             {/* Images and Media */}
             <div className="space-y-4">
-          <h3 className="text-lg font-medium">Images and Media</h3>
-          <div className="grid grid-cols-2 gap-4">
-  {renderFileInput("base_img", "Base Image", "image/*")}
-  {renderFileInput("sec_img1", "Secondary Image 1", "image/*")}
-  {renderFileInput("sec_img2", "Secondary Image 2", "image/*")}
-  {renderFileInput("sec_img3", "Secondary Image 3", "image/*")}
-  {renderFileInput("product_vid", "Product Video", "video/*")}
-</div>
-        </div>
+              <h3 className="text-lg font-medium">Images and Media</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {renderFileInput("base_img", "Base Image", "image/*")}
+                {renderFileInput("sec_img1", "Secondary Image 1", "image/*")}
+                {renderFileInput("sec_img2", "Secondary Image 2", "image/*")}
+                {renderFileInput("sec_img3", "Secondary Image 3", "image/*")}
+                {renderFileInput("product_vid", "Product Video", "video/*")}
+              </div>
+            </div>
 
             {/* Physical Properties */}
             <div className="space-y-4">
@@ -371,7 +450,7 @@ const AddProductForm = () => {
                   <Input
                     id="weight_gms"
                     name="weight_gms"
-                    type="number"
+                    type="text"
                     value={formData.weight_gms}
                     onChange={handleInputChange}
                   />
@@ -381,7 +460,7 @@ const AddProductForm = () => {
                   <Input
                     id="weight_carat"
                     name="weight_carat"
-                    type="number"
+                    type="text"
                     value={formData.weight_carat}
                     onChange={handleInputChange}
                   />
@@ -391,14 +470,29 @@ const AddProductForm = () => {
                   <Input
                     id="weight_ratti"
                     name="weight_ratti"
-                    type="number"
+                    type="text"
                     value={formData.weight_ratti}
                     onChange={handleInputChange}
                   />
                 </div>
               </div>
 
+              {/* Length X Breadth X Height */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="length">Length X Breadth X Height (cm)</Label>
+                  <Input
+                    id="lbh"
+                    name="lbh"
+                    type="text"
+                    placeholder="Length x Breadth x Height"
+                    value={lbh}
+                    onChange={(e: any) => handlelbhChange(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="length">Length (cm)</Label>
                   <Input
@@ -419,14 +513,14 @@ const AddProductForm = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Characteristics */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Characteristics</h3>
               <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="shape">Shape</Label>
                   <Input
                     id="shape"
@@ -501,30 +595,30 @@ const AddProductForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Pricing</h3>
               <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="actual_price">Actual Price</Label>
-                <Input
-                  id="actual_price"
-                  name="actual_price"
-                  type="number"
-                  value={formData.actual_price}
-                  onChange={handlePriceChange}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
                 <div className="space-y-2">
-                <Label htmlFor="sale_price">Sale Price</Label>
-                <Input
-                  id="sale_price"
-                  name="sale_price"
-                  type="number"
-                  value={formData.sale_price}
-                  onChange={handlePriceChange}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
+                  <Label htmlFor="actual_price">Actual Price</Label>
+                  <Input
+                    id="actual_price"
+                    name="actual_price"
+                    type="number"
+                    value={formData.actual_price}
+                    onChange={handlePriceChange}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sale_price">Sale Price</Label>
+                  <Input
+                    id="sale_price"
+                    name="sale_price"
+                    type="number"
+                    value={formData.sale_price}
+                    onChange={handlePriceChange}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity</Label>
                   <Input
@@ -535,13 +629,108 @@ const AddProductForm = () => {
                     onChange={handleInputChange}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="transparency">Transparency</Label>
+                  <Input
+                    id="transparency"
+                    name="transparency"
+                    type="string"
+                    value={formData.transparency}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* ref_index */}
+                <div className="space-y-2">
+                  <Label htmlFor="ref_index">Refrective Index</Label>
+                  <Input
+                    id="ref_index"
+                    name="ref_index"
+                    type="string"
+                    value={formData.ref_index}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* hardness */}
+                <div className="space-y-2">
+                  <Label htmlFor="hardness">Hardness</Label>
+                  <Input
+                    id="hardness"
+                    name="hardness"
+                    type="string"
+                    value={formData.hardness}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* spefic gravity */}
+                <div className="space-y-2">
+                  <Label htmlFor="sp_gravity">Specific Gravity</Label>
+                  <Input
+                    id="sp_gravity"
+                    name="sp_gravity"
+                    type="string"
+                    value={formData.sp_gravity}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Other Characteristics */}
+                <div className="space-y-2">
+                  <Label htmlFor="other_chars">Other Characteristics</Label>
+                  <Input
+                    id="other_chars"
+                    name="other_chars"
+                    type="string"
+                    value={formData.other_chars}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Visual Characteristics */}
+                <div className="space-y-2">
+                  <Label htmlFor="visual_chars">Visual Characteristics</Label>
+                  <Input
+                    id="visual_chars"
+                    name="visual_chars"
+                    type="string"
+                    value={formData.visual_chars}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Inclusion */}
+                <div className="space-y-2">
+                  <Label htmlFor="inclusion">Inclusion</Label>
+                  <Input
+                    id="inclusion"
+                    name="inclusion"
+                    type="string"
+                    value={formData.inclusion}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Species */}
+                <div className="space-y-2">
+                  <Label htmlFor="species">Species</Label>
+                  <Input
+                    id="species"
+                    name="species"
+                    type="string"
+                    value={formData.species}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Variety */}
+                <div className="space-y-2">
+                  <Label htmlFor="variety">Variety</Label>
+                  <Input
+                    id="variety"
+                    name="variety"
+                    type="string"
+                    value={formData.variety}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full"
-            >
+            <Button type="submit" className="w-full">
               Add Product
             </Button>
           </form>
