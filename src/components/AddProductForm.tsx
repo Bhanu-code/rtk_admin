@@ -27,6 +27,7 @@ interface ProductFormData {
   cert_img_url: string;
   name: string;
   description: string | null;
+  sku_code: string;
   category: string;
   subcategory: string;
   quantity: number;
@@ -154,6 +155,7 @@ const AddProductForm = () => {
     cert_img_url: "",
     name: "",
     description: null,
+    sku_code: "",
     category: "",
     subcategory: "", // Now a free text input
     quantity: 1,
@@ -409,6 +411,17 @@ const AddProductForm = () => {
                   value={formData.subcategory}
                   onChange={handleInputChange}
                   placeholder="Enter sub-category"
+                />
+              </div>
+              {/* SKU Code */}
+              <div className="space-y-2">
+                <Label htmlFor="sku_code">SKU Code</Label>
+                <Input
+                  id="sku_code"
+                  name="sku_code"
+                  value={formData.sku_code}
+                  onChange={handleInputChange}
+                  placeholder="Enter SKU Code"
                 />
               </div>
 

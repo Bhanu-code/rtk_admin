@@ -257,6 +257,10 @@ const Products = () => {
               </div>
               <div className="mt-4 pt-4 border-t flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className={`font-medium text-white rounded-md px-2 py-0 ${product?.status === `Draft` && `bg-yellow-500`} ${product?.status === `Feature` && `bg-blue-500`} ${product?.status === `Public` && `bg-green-400`}`}>{product?.status}</p>
+                </div>
+                <div>
                   <p className="text-sm text-gray-500">Price</p>
                   <p className={`font-medium ${product?.sale_price>0 && `line-through`}`}>Rs. {product?.actual_price}</p>
                   { product?.sale_price >0 && <p className="font-medium">Rs. {product?.sale_price}</p> }
