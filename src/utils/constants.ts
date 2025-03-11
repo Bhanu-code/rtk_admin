@@ -52,5 +52,15 @@ export const tabs = [
         tab_name: "Offer Bar",
         link: "/home/navbaroffer",
         type: "tab"
+    },
+    {
+        tab_name: "Banner Edit",
+        link: "/home/banner-edit",
+        type: "tab"
+    },
+    {
+        tab_name: "Pooja and Metal",
+        link: "/home/pooja-metal",
+        type: "tab"
     }
 ]
