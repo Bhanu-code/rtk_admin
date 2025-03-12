@@ -1,51 +1,66 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Search, Filter, UserPlus, MessageSquare, Phone,
-  Mail, ExternalLink, MapPin, ShoppingBag, Calendar,
-  Download, MoreVertical, Users, TrendingUp, DollarSign
-} from 'lucide-react';
+  Search,
+  Filter,
+  UserPlus,
+  MessageSquare,
+  Phone,
+  Mail,
+  ExternalLink,
+  MapPin,
+  ShoppingBag,
+  Calendar,
+  Download,
+  MoreVertical,
+  Users,
+  TrendingUp,
+  DollarSign,
+} from "lucide-react";
+import { userRequest } from "@/utils/requestMethods";
+import { useSelector } from "react-redux";
+import { useQuery } from "react-query";
 
 const Customers = () => {
   // Sample customers data - would come from your backend in a real app
   const initialCustomers = [
     {
       id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+1 (555) 123-4567',
-      whatsapp: '+15551234567',
-      location: 'Austin, TX',
+      name: "John Doe",
+      email: "john@example.com",
+      phone: "+1 (555) 123-4567",
+      whatsapp: "+15551234567",
+      location: "Austin, TX",
       totalOrders: 12,
-      totalSpent: 1250.50,
-      lastPurchase: '2025-01-10',
-      status: 'Active',
-      avatar: '/api/placeholder/40/40'
+      totalSpent: 1250.5,
+      lastPurchase: "2025-01-10",
+      status: "Active",
+      avatar: "/api/placeholder/40/40",
     },
     {
       id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+1 (555) 234-5678',
-      whatsapp: '+15552345678',
-      location: 'New York, NY',
+      name: "Jane Smith",
+      email: "jane@example.com",
+      phone: "+1 (555) 234-5678",
+      whatsapp: "+15552345678",
+      location: "New York, NY",
       totalOrders: 8,
       totalSpent: 890.75,
-      lastPurchase: '2025-01-12',
-      status: 'Active',
-      avatar: '/api/placeholder/40/40'
+      lastPurchase: "2025-01-12",
+      status: "Active",
+      avatar: "/api/placeholder/40/40",
     },
     // Add more sample customers as needed
   ];
 
   const [customers] = useState(initialCustomers);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   // const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => {
+  const filteredCustomers = customers.filter((customer) => {
     return (
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,9 +68,24 @@ const Customers = () => {
     );
   });
 
-  const openWhatsApp = (whatsappNumber:any) => {
-    window.open(`https://wa.me/${whatsappNumber}`, '_blank');
+  const openWhatsApp = (whatsappNumber: any) => {
+    window.open(`https://wa.me/${whatsappNumber}`, "_blank");
   };
+
+  const token = useSelector((state: any) => state.user.accessToken);
+
+  const fetchCustomers = async () => {
+    const response = await userRequest({
+      url: `${import.meta.env.VITE_PROXY_URL}/user/get-user/`,
+      method: "get",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  };
+
+  const { data: employees } = useQuery("get-customers", fetchCustomers);
+
+  console.log("EMPLOYEES : ", employees);
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -84,7 +114,7 @@ const Customers = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Customers</p>
-                <p className="text-2xl font-bold">{customers.length}</p>
+                <p className="text-2xl font-bold">{employees?.length}</p>
               </div>
             </div>
           </CardContent>
@@ -99,7 +129,11 @@ const Customers = () => {
               <div>
                 <p className="text-sm text-gray-500">Average Purchase</p>
                 <p className="text-2xl font-bold">
-                  ${(customers.reduce((acc, cur) => acc + cur.totalSpent, 0) / customers.length).toFixed(2)}
+                  $
+                  {(
+                    customers.reduce((acc, cur) => acc + cur.totalSpent, 0) /
+                    customers.length
+                  )}
                 </p>
               </div>
             </div>
@@ -156,28 +190,44 @@ const Customers = () => {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Customer</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Contact</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Location</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Orders</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Total Spent</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Last Purchase</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Orders
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Total Spent
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Last Purchase
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                {employees?.map((customer:any) => (
+                  <tr key={customer?.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={customer.avatar}
-                          alt={customer.name}
+                          src={customer?.avatar}
+                          alt={customer?.firstname}
                           className="w-10 h-10 rounded-full"
                         />
                         <div>
-                          <p className="font-medium">{customer.name}</p>
-                          <p className="text-sm text-gray-500">ID: #{customer.id}</p>
+                          <p className="font-medium">{customer?.firstname + " " + customer?.lastname}</p>
+                          <p className="text-sm text-gray-500">
+                            ID: #{customer?.id}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -185,35 +235,35 @@ const Customers = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4 text-gray-400" />
-                          {customer.email}
+                          {customer?.email}
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4 text-gray-400" />
-                          {customer.phone}
+                          {customer.telephone}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        {customer.location}
+                        {customer?.location}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <ShoppingBag className="h-4 w-4 text-gray-400" />
-                        {customer.totalOrders}
+                        {customer?.totalOrders}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium">
-                        ${customer.totalSpent.toFixed(2)}
+                        ${customer?.totalSpent}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {new Date(customer.lastPurchase).toLocaleDateString()}
+                        {new Date(customer?.lastPurchase).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -222,7 +272,7 @@ const Customers = () => {
                           variant="ghost"
                           size="sm"
                           className="text-green-600 hover:text-green-700"
-                          onClick={() => openWhatsApp(customer.whatsapp)}
+                          onClick={() => openWhatsApp(customer?.telephone)}
                         >
                           <MessageSquare className="h-4 w-4" />
                         </Button>
