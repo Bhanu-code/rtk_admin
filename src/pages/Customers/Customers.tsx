@@ -60,13 +60,13 @@ const Customers = () => {
   // const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   // Filter customers based on search term
-  const filteredCustomers = customers.filter((customer) => {
-    return (
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm)
-    );
-  });
+  // const filteredCustomers = customers.filter((customer) => {
+  //   return (
+  //     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     customer.phone.includes(searchTerm)
+  //   );
+  // });
 
   const openWhatsApp = (whatsappNumber: any) => {
     window.open(`https://wa.me/${whatsappNumber}`, "_blank");
