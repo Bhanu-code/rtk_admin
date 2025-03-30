@@ -6,6 +6,7 @@ import logo from '../assets/logo.jpeg'
 interface CertificateGeneratorProps {
   formData: ProductFormData;
   baseImageUrl: string | null;
+  key?: string; // Add this line
 }
 
 export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGeneratorProps>(({
@@ -13,9 +14,11 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
   baseImageUrl
 }, ref) => {
   const certificateRef = useRef<HTMLDivElement>(null);
-
+  const [imageLoadError, setImageLoadError] = useState(false)
+    const [currentImageUrl, setCurrentImageUrl] = useState(baseImageUrl)
   const generateCertificateImage = async (): Promise<string | null> => {
     if (!certificateRef.current) return null;
+
 
     try {
       const canvas = await html2canvas(certificateRef.current, {
@@ -31,6 +34,16 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
       return null;
     }
   };
+
+  useEffect(() => {
+    setCurrentImageUrl(baseImageUrl)
+    setImageLoadError(false)
+  }, [baseImageUrl])
+
+  const handleImageError = () => {
+    setImageLoadError(true)
+  }
+
 
   useEffect(() => {
     generateCertificateImage();
@@ -117,17 +130,21 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
 
           {/* Right Column - Gemstone Image */}
           <div className="flex flex-col items-center justify-center">
-            {baseImageUrl ? (
-              <img
-                src={baseImageUrl}
-                alt="Gemstone"
-                className="w-full h-auto max-h-56 object-contain border"
-              />
-            ) : (
-              <div className="w-full h-56 bg-gray-200 flex items-center justify-center">
-                <p className="text-gray-500">Gemstone image</p>
-              </div>
-            )}
+          {currentImageUrl && !imageLoadError ? (
+            <img
+              src={currentImageUrl}
+              alt="Gemstone"
+              className="w-full h-auto max-h-56 object-contain border"
+              onError={handleImageError}
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div className="w-full h-56 bg-gray-200 flex items-center justify-center">
+              <p className="text-gray-500">
+                {imageLoadError ? 'Image failed to load' : 'Gemstone image'}
+              </p>
+            </div>
+          )}
             <div className="mt-2">
               <img
                 src={logo}
