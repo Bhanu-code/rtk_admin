@@ -50,15 +50,15 @@ const ViewProduct = () => {
   const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="relative max-w-4xl w-full mx-4">
-        <button 
+        <button
           onClick={onClose}
           className="absolute -top-10 right-0 text-white hover:text-gray-300"
         >
           <X size={24} />
         </button>
-        <img 
-          src={imageUrl} 
-          alt="Full size" 
+        <img
+          src={imageUrl}
+          alt="Full size"
           className="w-full h-auto rounded-lg"
           onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
             const img = e.currentTarget;
@@ -71,7 +71,7 @@ const ViewProduct = () => {
   );
 
   // Product data fetch
-  const { data: product, isLoading } = useQuery(["get-product", id], () => 
+  const { data: product, isLoading } = useQuery(["get-product", id], () =>
     userRequest({
       url: `/product/get-product/${id}`,
       method: "get",
@@ -110,7 +110,7 @@ const ViewProduct = () => {
 
   // Image component with error handling
   const ProductImage: React.FC<ProductImageProps> = ({ src, alt, className }) => (
-    <div 
+    <div
       className={`relative cursor-pointer hover:opacity-90 transition-opacity ${className}`}
       onClick={() => src && setSelectedImage(src)}
     >
@@ -144,12 +144,12 @@ const ViewProduct = () => {
   return (
     <div className="container mx-auto mb-10 p-6">
       {selectedImage && (
-        <ImageModal 
-          imageUrl={selectedImage} 
-          onClose={() => setSelectedImage(null)} 
+        <ImageModal
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
         />
       )}
-      
+
       <div className="w-full flex flex-end">
         <Link to={`/home/products/edit/${id}`} className="ml-auto">
           <Button className="bg-blue-600 px-3 py-1 text-white rounded-lg hover:bg-blue-500">
@@ -157,9 +157,9 @@ const ViewProduct = () => {
           </Button>
         </Link>
       </div>
-      
+
       <br />
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Product Details</CardTitle>
@@ -174,13 +174,12 @@ const ViewProduct = () => {
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                  product?.data?.product?.status === 'Public' 
-                    ? 'bg-green-100 text-green-800' 
-                    : product?.data?.product?.status === 'Feature'
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${product?.data?.product?.status === 'Public'
+                  ? 'bg-green-100 text-green-800'
+                  : product?.data?.product?.status === 'Feature'
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800'
-                }`}>
+                  }`}>
                   {product?.data?.product?.status}
                 </span>
               </div>
@@ -219,9 +218,9 @@ const ViewProduct = () => {
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label>Base Image:</Label>
-                  <ProductImage 
-                    src={product?.data?.product?.base_img_url} 
-                    alt="Base Image" 
+                  <ProductImage
+                    src={product?.data?.product?.base_img_url}
+                    alt="Base Image"
                     className="w-full"
                   />
                 </div>
@@ -229,49 +228,100 @@ const ViewProduct = () => {
               <div className="grid grid-cols-3 gap-4 mt-4">
                 <div className="space-y-2">
                   <Label>Secondary Image 1:</Label>
-                  <ProductImage 
-                    src={product?.data?.product?.sec_img1_url} 
-                    alt="Secondary Image 1" 
+                  <ProductImage
+                    src={product?.data?.product?.sec_img1_url}
+                    alt="Secondary Image 1"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Secondary Image 2:</Label>
-                  <ProductImage 
-                    src={product?.data?.product?.sec_img2_url} 
-                    alt="Secondary Image 2" 
+                  <ProductImage
+                    src={product?.data?.product?.sec_img2_url}
+                    alt="Secondary Image 2"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Secondary Image 3:</Label>
-                  <ProductImage 
-                    src={product?.data?.product?.sec_img3_url} 
-                    alt="Secondary Image 3" 
+                  <ProductImage
+                    src={product?.data?.product?.sec_img3_url}
+                    alt="Secondary Image 3"
                   />
                 </div>
               </div>
-              
-              {/* Video Section */}
+
               <div className="mt-4 space-y-2">
-                <Label>Product Video:</Label>
-                {product?.data?.product?.product_vid_url ? (
-                  <div className="mt-2 rounded overflow-hidden">
-                    <video 
-                      controls 
-                      className="m-auto w-full max-w-lg"
-                      poster="/video-thumbnail.png"
-                    >
-                      <source 
-                        src={product.data.product.product_vid_url} 
-                        type="video/mp4" 
-                      />
-                      Your browser does not support the video tag.
-                    </video>
+                <Label>Product GIF:</Label>
+                {product?.data?.product?.product_gif_url ? (
+                  <div className="mt-2">
+                    <img
+                      src={product.data.product.product_gif_url}
+                      alt="Product GIF"
+                      className="max-w-lg w-72 h-auto rounded"
+                      onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                        const img = e.currentTarget;
+                        img.src = '/placeholder-image.png';
+                        img.alt = 'GIF not available';
+                      }}
+                    />
                   </div>
                 ) : (
-                  <div className="mt-2 w-full h-48 bg-gray-100 rounded flex items-center justify-center text-gray-400">
-                    Video not available
+                  <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                    GIF not available
                   </div>
                 )}
+              </div>
+
+              {/* Video Section */}
+              <div className="mt-4 space-y-4">
+                <Label>Product Videos:</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="mt-4 space-y-2">
+                    <Label>Product Video:</Label>
+                    {product?.data?.product?.product_vid_url ? (
+                      <div className="mt-2 rounded overflow-hidden">
+                        <video
+                          controls
+                          className="m-auto w-full max-w-lg"
+                          poster="/video-thumbnail.png"
+                        >
+                          <source
+                            src={product.data.product.product_vid_url}
+                            type="video/mp4"
+                          />
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                    ) : (
+                      <div className="mt-2 w-full h-48 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                        Video not available
+                      </div>
+                    )}
+                  </div>
+
+                  
+                  <div className="space-y-2">
+                    <Label>Video 2:</Label>
+                    {product?.data?.product?.product_video2_url ? (
+                      <div className="mt-2 rounded overflow-hidden">
+                        <video
+                          controls
+                          className="m-auto w-full max-w-lg"
+                          poster="/video-thumbnail.png"
+                        >
+                          <source
+                            src={product.data.product.product_video2_url}
+                            type="video/mp4"
+                          />
+                          Your browser does not support the video tag.
+                        </video>
+                      </div>
+                    ) : (
+                      <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                        Video not available
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

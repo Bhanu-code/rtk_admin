@@ -1,11 +1,64 @@
-import React, { useRef, useEffect, useState, forwardRef } from "react";
+import { useRef, useEffect, useState, forwardRef } from "react";
 import html2canvas from "html2canvas";
 
 import logo from '../assets/logo.jpeg'
 
+
+interface ProductFormData {
+  [key: string]: any;
+  base_img?: File | null;
+  sec_img1?: File | null;
+  sec_img2?: File | null;
+  sec_img3?: File | null;
+  product_vid?: File | null;
+  base_img_url?: string | null;
+  sec_img1_url?: string | null;
+  sec_img2_url?: string | null;
+  sec_img3_url?: string | null;
+  product_vid_url?: string | null;
+  cert_img_url?: string;
+  name?: string;
+  description?: string;
+  sku?: string;
+  category?: string;
+  subcategory?: string;
+  quantity?: number;
+  actual_price?: number;
+  sale_price?: number;
+  origin?: string;
+  weight_gms?: number;
+  weight_carat?: number;
+  weight_ratti?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  shape?: string;
+  cut?: string;
+  treatment?: string;
+  composition?: string;
+  certification?: string;
+  color?: string;
+  status?: string;
+  certificate_no?: string;
+  luminescence?: string;
+  op_char?: string;
+  crystal_sys?: string;
+  shape_cut?: string;
+  transparency?: string;
+  ref_index?: string;
+  hardness?: string;
+  sp_gravity?: string;
+  inclusion?: string;
+  species?: string;
+  variety?: string;
+  other_chars?: string;
+  visual_chars?: string;
+}
+
 interface CertificateGeneratorProps {
   formData: ProductFormData;
   baseImageUrl: string | null;
+  key?: string; // Add this line
 }
 
 export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGeneratorProps>(({
@@ -13,9 +66,11 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
   baseImageUrl
 }, ref) => {
   const certificateRef = useRef<HTMLDivElement>(null);
-
+  const [imageLoadError, setImageLoadError] = useState(false)
+    const [currentImageUrl, setCurrentImageUrl] = useState(baseImageUrl)
   const generateCertificateImage = async (): Promise<string | null> => {
     if (!certificateRef.current) return null;
+
 
     try {
       const canvas = await html2canvas(certificateRef.current, {
@@ -31,6 +86,16 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
       return null;
     }
   };
+
+  useEffect(() => {
+    setCurrentImageUrl(baseImageUrl)
+    setImageLoadError(false)
+  }, [baseImageUrl])
+
+  const handleImageError = () => {
+    setImageLoadError(true)
+  }
+
 
   useEffect(() => {
     generateCertificateImage();
@@ -117,17 +182,21 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
 
           {/* Right Column - Gemstone Image */}
           <div className="flex flex-col items-center justify-center">
-            {baseImageUrl ? (
-              <img
-                src={baseImageUrl}
-                alt="Gemstone"
-                className="w-full h-auto max-h-56 object-contain border"
-              />
-            ) : (
-              <div className="w-full h-56 bg-gray-200 flex items-center justify-center">
-                <p className="text-gray-500">Gemstone image</p>
-              </div>
-            )}
+          {currentImageUrl && !imageLoadError ? (
+            <img
+              src={currentImageUrl}
+              alt="Gemstone"
+              className="w-full h-auto max-h-56 object-contain border"
+              onError={handleImageError}
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div className="w-full h-56 bg-gray-200 flex items-center justify-center">
+              <p className="text-gray-500">
+                {imageLoadError ? 'Image failed to load' : 'Gemstone image'}
+              </p>
+            </div>
+          )}
             <div className="mt-2">
               <img
                 src={logo}
