@@ -22,7 +22,7 @@ import { useQueryClient } from "react-query";
 import { ClipLoader } from "react-spinners";
 import html2canvas from 'html2canvas';
 
-type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'sec_img3' | 'product_vid';
+type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'sec_img3' | 'product_vid' | 'product_vid2' | 'product_gif';
 
 interface ProductFormData {
   [key: string]: any;
@@ -31,11 +31,15 @@ interface ProductFormData {
   sec_img2: File | null;
   sec_img3: File | null;
   product_vid: File | null;
+  product_vid2: File | null;
+  product_gif: File | null;
   base_img_url: string | null;
   sec_img1_url: string | null;
   sec_img2_url: string | null;
   sec_img3_url: string | null;
   product_vid_url: string | null;
+  product_vid2_url: string | null;
+  product_gif_url: string | null;
   cert_img_url: string;
   name: string;
   description: string;
@@ -138,11 +142,15 @@ const EditProductForm = () => {
     sec_img2: null,
     sec_img3: null,
     product_vid: null,
+    product_vid2: null,
+    product_gif: null,
     base_img_url: null,
     sec_img1_url: null,
     sec_img2_url: null,
     sec_img3_url: null,
     product_vid_url: null,
+    product_vid2_url: null,
+    product_gif_url: null,
     cert_img_url: "",
     name: "",
     description: "",
@@ -184,102 +192,104 @@ const EditProductForm = () => {
 
   const [dimensionString, setDimensionString] = useState("");
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
-  const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
-  const [certImageFile, setCertImageFile] = useState<File | null>(null);
+  // const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
+  // const [certImageFile, setCertImageFile] = useState<File | null>(null);
 
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  // const [imagesLoaded, setImagesLoaded] = useState(false);
 
   // Add this function to create a CORS-friendly version of remote images
-const createProxiedImage = (url) => {
-  return new Promise((resolve, reject) => {
-    // Create a new image element
-    const img = new Image();
-    img.crossOrigin = "anonymous"; // This is crucial for CORS
-    
-    img.onload = () => {
-      // Create a canvas to draw the image
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the image on canvas
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      
-      // Get the data URL (this is now CORS-safe)
-      try {
-        const dataUrl = canvas.toDataURL('image/png');
-        resolve(dataUrl);
-      } catch (e) {
-        console.error("Failed to convert image to data URL", e);
-        reject(e);
-      }
-    };
-    
-    img.onerror = (e) => {
-      console.error("Error loading image for CORS proxy:", url);
-      reject(e);
-    };
-    
-    // Add a cache-busting parameter to avoid cached responses
-    img.src = `${url}?cb=${new Date().getTime()}`;
-  });
-};
+  const createProxiedImage = (url: string): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
+      // Create a new image element
+      const img = new Image();
+      img.crossOrigin = "anonymous"; // This is crucial for CORS
 
-const ensureImagesLoaded = async () => {
-  if (!certificateRef.current) return;
-  
-  const imgElements = certificateRef.current.querySelectorAll('img');
-  if (imgElements.length === 0) return;
-  
-  const promises = Array.from(imgElements).map(async (img) => {
-    // Check if this is a remote URL from your storage
-    if (img.src.includes('storage.googleapis.com')) {
-      try {
-        // Create a CORS-friendly version of the image
-        const dataUrl = await createProxiedImage(img.src);
-        // Replace the original src with the data URL
-        img.src = dataUrl;
-        return new Promise(resolve => {
-          img.onload = resolve;
-          // If it's already loaded, resolve immediately
-          if (img.complete) resolve();
-        });
-      } catch (error) {
-        console.error("Failed to proxy image:", error);
-        // If proxying fails, we'll still wait for the image
-        return new Promise(resolve => {
-          img.onload = resolve;
-          img.onerror = resolve; // Resolve on error too, to prevent hanging
+      img.onload = () => {
+        // Create a canvas to draw the image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Draw the image on canvas
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0);
+
+        // Get the data URL (this is now CORS-safe)
+        try {
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve(dataUrl);
+        } catch (e) {
+          console.error("Failed to convert image to data URL", e);
+          reject(e);
+        }
+      };
+
+      img.onerror = (e) => {
+        console.error("Error loading image for CORS proxy:", url);
+        reject(e);
+      };
+
+      // Add a cache-busting parameter to avoid cached responses
+      img.src = `${url}?cb=${new Date().getTime()}`;
+    });
+  };
+
+  const ensureImagesLoaded = async (): Promise<void> => {
+    if (!certificateRef.current) return;
+
+    const imgElements = certificateRef.current.querySelectorAll('img');
+    if (imgElements.length === 0) return;
+
+    const promises = Array.from(imgElements).map(async (img) => {
+      // Check if this is a remote URL from your storage
+      if (img.src.includes('storage.googleapis.com')) {
+        try {
+          // Create a CORS-friendly version of the image
+          const dataUrl = await createProxiedImage(img.src);
+          // Replace the original src with the data URL
+          img.src = dataUrl;
+          return new Promise<void>(resolve => {
+            img.onload = () => resolve();
+            // If it's already loaded, resolve immediately
+            if (img.complete) resolve();
+          });
+        } catch (error) {
+          console.error("Failed to proxy image:", error);
+          // If proxying fails, we'll still wait for the image
+          return new Promise<void>(resolve => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // Resolve on error too, to prevent hanging
+            if (img.complete) resolve();
+          });
+        }
+      } else {
+        // For non-remote images, just wait for them to load
+        return new Promise<void>(resolve => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve(); // Resolve on error too, to prevent hanging
           if (img.complete) resolve();
         });
       }
-    } else {
-      // For non-remote images, just wait for them to load
-      return new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve; // Resolve on error too, to prevent hanging
-        if (img.complete) resolve();
-      });
-    }
-  });
-  
-  // Set a timeout to prevent hanging forever
-  const timeoutPromise = new Promise(resolve => {
-    setTimeout(() => {
-      console.warn("Image loading timed out, proceeding anyway");
-      resolve();
-    }, 5000);
-  });
-  
-  // Wait for all images to load or timeout
-  await Promise.race([
-    Promise.all(promises),
-    timeoutPromise
-  ]);
-  
-  setImagesLoaded(true);
-};
+    });
+
+    const timeoutPromise = new Promise<void>(resolve => {
+      setTimeout(() => {
+        console.warn("Image loading timed out, proceeding anyway");
+        resolve();
+      }, 5000);
+    });
+
+    // Wait for all images to load or timeout
+    await Promise.race([
+      Promise.all(promises),
+      timeoutPromise
+    ]);
+  };
 
   // Fetch product data
   const { data, isLoading: loadingProduct } = useQuery(
@@ -311,6 +321,8 @@ const ensureImagesLoaded = async () => {
         sec_img2_url: product.sec_img2_url,
         sec_img3_url: product.sec_img3_url,
         product_vid_url: product.product_vid_url,
+        product_vid2_url: product.product_video2_url, // Add this
+        product_gif_url: product.product_gif_url,     // Add this
       }));
 
       if (attribute?.length && attribute?.width && attribute?.height) {
@@ -417,37 +429,37 @@ const ensureImagesLoaded = async () => {
     }
   };
 
-  const createFormDataWithFiles = async () => {
-    const formDataToSend = new FormData();
+  // const createFormDataWithFiles = async () => {
+  //   const formDataToSend = new FormData();
 
-    // Generate certificate image first
-    const certFile = await generateAndUploadCertificate();
-    if (certFile) {
-      formDataToSend.append('sec_img3', certFile);
-    }
+  //   // Generate certificate image first
+  //   const certFile = await generateAndUploadCertificate();
+  //   if (certFile) {
+  //     formDataToSend.append('sec_img3', certFile);
+  //   }
 
-    // Append all text fields
-    Object.keys(formData).forEach(key => {
-      if (!['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid',
-        'base_img_url', 'sec_img1_url', 'sec_img2_url', 'sec_img3_url', 'product_vid_url'].includes(key)) {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
+  //   // Append all text fields
+  //   Object.keys(formData).forEach(key => {
+  //     if (!['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid',
+  //       'base_img_url', 'sec_img1_url', 'sec_img2_url', 'sec_img3_url', 'product_vid_url'].includes(key)) {
+  //       formDataToSend.append(key, formData[key]);
+  //     }
+  //   });
 
-    // Append files
-    if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
-    if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
-    if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
-    if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
+  //   // Append files
+  //   if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
+  //   if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
+  //   if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
+  //   if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
 
-    // Handle removed images
-    if (!formData.base_img && !formData.base_img_url) formDataToSend.append('base_img_remove', 'true');
-    if (!formData.sec_img1 && !formData.sec_img1_url) formDataToSend.append('sec_img1_remove', 'true');
-    if (!formData.sec_img2 && !formData.sec_img2_url) formDataToSend.append('sec_img2_remove', 'true');
-    if (!formData.product_vid && !formData.product_vid_url) formDataToSend.append('product_video_remove', 'true');
+  //   // Handle removed images
+  //   if (!formData.base_img && !formData.base_img_url) formDataToSend.append('base_img_remove', 'true');
+  //   if (!formData.sec_img1 && !formData.sec_img1_url) formDataToSend.append('sec_img1_remove', 'true');
+  //   if (!formData.sec_img2 && !formData.sec_img2_url) formDataToSend.append('sec_img2_remove', 'true');
+  //   if (!formData.product_vid && !formData.product_vid_url) formDataToSend.append('product_video_remove', 'true');
 
-    return formDataToSend;
-  };
+  //   return formDataToSend;
+  // };
 
   const updateProductMutation = useMutation({
     mutationFn: async (formDataToSend: FormData) => {
@@ -501,11 +513,19 @@ const ensureImagesLoaded = async () => {
       const file = e.target.files[0];
       const isImageField = fieldName.includes('img');
       const isVideoField = fieldName === 'product_vid';
+      const isGifField = fieldName === 'product_gif';
 
-      if ((isImageField && !file.type.startsWith('image/')) ||
-        (isVideoField && !file.type.startsWith('video/'))) {
+      if (
+        (isImageField && !file.type.startsWith('image/')) ||
+        (isVideoField && !file.type.startsWith('video/')) ||
+        (isGifField && !file.type.startsWith('image/gif'))
+      ) {
         toast.error(
-          isImageField ? 'Please select a valid image file' : 'Please select a valid video file',
+          isImageField
+            ? 'Please select a valid image file'
+            : isVideoField
+              ? 'Please select a valid video file'
+              : 'Please select a valid GIF file',
           { position: "bottom-right", duration: 2000 }
         );
         return;
@@ -553,6 +573,13 @@ const ensureImagesLoaded = async () => {
 
       // Create form data with ALL fields
       const formDataToSend = new FormData();
+
+      // Object.keys(formData).forEach(key => {
+      //   if (!['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid', 'product_vid2', 'product_gif',
+      //     'base_img_url', 'sec_img1_url', 'sec_img2_url', 'sec_img3_url', 'product_vid_url', 'product_vid2_url', 'product_gif_url'].includes(key)) {
+      //     formDataToSend.append(key, String(formData[key]));
+      //   }
+      // });
 
       // Split data into product and attribute fields based on your schema
       const productFields = [
@@ -626,12 +653,29 @@ const ensureImagesLoaded = async () => {
         formDataToSend.append('product_video_remove', 'true');
       }
 
+      if (formData.product_vid2) {
+        formDataToSend.append('product_video2', formData.product_vid2);
+      } else if (formData.product_vid2_url) {
+        formDataToSend.append('keep_product_video2', 'true');
+      } else {
+        formDataToSend.append('product_video2_remove', 'true');
+      }
+
+      // Handle GIF
+      if (formData.product_gif) {
+        formDataToSend.append('product_gif', formData.product_gif);
+      } else if (formData.product_gif_url) {
+        formDataToSend.append('keep_product_gif', 'true');
+      } else {
+        formDataToSend.append('product_gif_remove', 'true');
+      }
+
       // Send the request
       await updateProductMutation.mutateAsync(formDataToSend);
 
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(error.message || "Failed to update product");
+      toast.error((error as Error).message || "Failed to update product");
     }
   };
 
@@ -780,6 +824,8 @@ const ensureImagesLoaded = async () => {
                 {renderFileInput("sec_img1", "Secondary Image 1")}
                 {renderFileInput("sec_img2", "Secondary Image 2")}
                 {renderFileInput("product_vid", "Product Video")}
+                {renderFileInput("product_vid2", "Product Video 2")}
+                {renderFileInput("product_gif", "Product GIF")}
               </div>
             </div>
 

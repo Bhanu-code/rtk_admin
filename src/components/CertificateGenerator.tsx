@@ -1,7 +1,59 @@
-import React, { useRef, useEffect, useState, forwardRef } from "react";
+import { useRef, useEffect, useState, forwardRef } from "react";
 import html2canvas from "html2canvas";
 
 import logo from '../assets/logo.jpeg'
+
+
+interface ProductFormData {
+  [key: string]: any;
+  base_img?: File | null;
+  sec_img1?: File | null;
+  sec_img2?: File | null;
+  sec_img3?: File | null;
+  product_vid?: File | null;
+  base_img_url?: string | null;
+  sec_img1_url?: string | null;
+  sec_img2_url?: string | null;
+  sec_img3_url?: string | null;
+  product_vid_url?: string | null;
+  cert_img_url?: string;
+  name?: string;
+  description?: string;
+  sku?: string;
+  category?: string;
+  subcategory?: string;
+  quantity?: number;
+  actual_price?: number;
+  sale_price?: number;
+  origin?: string;
+  weight_gms?: number;
+  weight_carat?: number;
+  weight_ratti?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  shape?: string;
+  cut?: string;
+  treatment?: string;
+  composition?: string;
+  certification?: string;
+  color?: string;
+  status?: string;
+  certificate_no?: string;
+  luminescence?: string;
+  op_char?: string;
+  crystal_sys?: string;
+  shape_cut?: string;
+  transparency?: string;
+  ref_index?: string;
+  hardness?: string;
+  sp_gravity?: string;
+  inclusion?: string;
+  species?: string;
+  variety?: string;
+  other_chars?: string;
+  visual_chars?: string;
+}
 
 interface CertificateGeneratorProps {
   formData: ProductFormData;

@@ -20,7 +20,7 @@ import { X } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import html2canvas from 'html2canvas';
 
-type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'product_vid';
+type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'product_vid' | 'product_vid2' | 'product_gif';
 
 interface ProductFormData {
   [key: string]: any;
@@ -29,6 +29,8 @@ interface ProductFormData {
   sec_img2: File | null;
   sec_img3: File | null;
   product_vid: File | null;
+  product_vid2: File | null; // Additional video
+  product_gif: File | null;  // GIF field
   cert_img_url: string;
   name: string;
   description: string;
@@ -132,6 +134,8 @@ const AddProductForm = () => {
     sec_img2: null,
     sec_img3: null,
     product_vid: null,
+    product_vid2: null,
+    product_gif: null,
     cert_img_url: "",
     name: "",
     description: "",
@@ -173,8 +177,8 @@ const AddProductForm = () => {
 
   const [dimensionString, setDimensionString] = useState("");
 
-  const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
-  const [certImageFile, setCertImageFile] = useState<File | null>(null);
+  // const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
+  // const [certImageFile, setCertImageFile] = useState<File | null>(null);
 
   function extractDimensions(input: string) {
     if (!input) return null;
@@ -263,26 +267,26 @@ const AddProductForm = () => {
 
     return formDataToSend;
   };
-  const urlToFile = async (url: string, filename: string): Promise<File> => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: blob.type });
-  };
+  // const urlToFile = async (url: string, filename: string): Promise<File> => {
+  //   const response = await fetch(url);
+  //   const blob = await response.blob();
+  //   return new File([blob], filename, { type: blob.type });
+  // };
 
-  const generateCertificateImage = async (baseImageUrl: string): Promise<string | null> => {
-    // This is a simplified version - in reality, you'd need to implement
-    // a proper way to generate the certificate image using a canvas library
-    // or a server-side solution for better reliability
+  // const generateCertificateImage = async (baseImageUrl: string): Promise<string | null> => {
+  //   // This is a simplified version - in reality, you'd need to implement
+  //   // a proper way to generate the certificate image using a canvas library
+  //   // or a server-side solution for better reliability
 
-    // For demo purposes, we'll just return the base image URL
-    return baseImageUrl;
+  //   // For demo purposes, we'll just return the base image URL
+  //   return baseImageUrl;
 
-    // In a real implementation, you would:
-    // 1. Create a canvas with the certificate template
-    // 2. Draw all the text fields from formData
-    // 3. Draw the base image in the appropriate place
-    // 4. Convert canvas to data URL
-  };
+  //   // In a real implementation, you would:
+  //   // 1. Create a canvas with the certificate template
+  //   // 2. Draw all the text fields from formData
+  //   // 3. Draw the base image in the appropriate place
+  //   // 4. Convert canvas to data URL
+  // };
 
   const createProductMutation = useMutation({
     mutationFn: async () => {
@@ -326,6 +330,8 @@ const AddProductForm = () => {
         sec_img2: null,
         sec_img3: null,
         product_vid: null,
+        product_vid2: null,
+        product_gif: null,
         cert_img_url: "",
         name: "",
         description: "",
@@ -380,7 +386,7 @@ const AddProductForm = () => {
       console.error("Certificate ref is not available");
       return null;
     }
-  
+
     try {
       // Generate the certificate image with higher quality settings
       const canvas = await html2canvas(certificateRef.current, {
@@ -388,29 +394,29 @@ const AddProductForm = () => {
         logging: true, // Enable logging for debugging
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff', 
+        backgroundColor: '#ffffff',
         ignoreElements: (element) => {
           // Ignore any elements that might interfere with rendering
           return element.classList.contains('ignore-rendering');
         } // Transparent background if needed
       });
-  
+
       // Convert canvas to blob
       const blob = await new Promise<Blob | null>(resolve => {
         canvas.toBlob(resolve, 'image/jpeg', 0.95); // Higher quality
       });
-  
+
       if (!blob) {
         console.error("Failed to convert canvas to blob");
         return null;
       }
-  
+
       // Create a File object from the blob
-      const certFile = new File([blob], 'certificate.jpg', { 
+      const certFile = new File([blob], 'certificate.jpg', {
         type: 'image/png',
         lastModified: Date.now()
       });
-  
+
       console.log("Certificate file generated:", certFile);
       return certFile;
     } catch (error) {
@@ -441,14 +447,20 @@ const AddProductForm = () => {
 
       const isImageField = fieldName.includes('img');
       const isVideoField = fieldName === 'product_vid';
+      const isGifField = fieldName === 'product_gif';
 
       // Corrected condition with proper parentheses
-      if ((isImageField && !file.type.startsWith('image/')) ||
-        (isVideoField && !file.type.startsWith('video/'))) {
+      if (
+        (isImageField && !file.type.startsWith('image/')) ||
+        (isVideoField && !file.type.startsWith('video/')) ||
+        (isGifField && !file.type.startsWith('image/gif'))
+      ) {
         toast.error(
           isImageField
             ? 'Please select a valid image file'
-            : 'Please select a valid video file',
+            : isVideoField
+              ? 'Please select a valid video file'
+              : 'Please select a valid GIF file',
           {
             position: "bottom-right",
             duration: 2000
@@ -481,40 +493,44 @@ const AddProductForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateDimensions()) return;
-  
+
     try {
       // Generate the certificate image first
       const certFile = await generateAndUploadCertificate();
-      
+
       if (!certFile) {
         toast.error("Failed to generate certificate image");
         return;
       }
-  
+
       // Create form data
       const formDataToSend = new FormData();
-  
+
       // Append all text fields
       Object.keys(formData).forEach(key => {
-        if (key !== 'base_img' && key !== 'sec_img1' && key !== 'sec_img2' && key !== 'sec_img3' && key !== 'product_vid') {
+        if (key !== 'base_img' && key !== 'sec_img1' && key !== 'sec_img2' &&
+          key !== 'sec_img3' && key !== 'product_vid' && key !== 'product_vid2' &&
+          key !== 'product_gif') {
           formDataToSend.append(key, formData[key]);
         }
       });
-  
+
       // Append files - IMPORTANT: Use the same field names as backend expects
       if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
       if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
       if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
       if (certFile) formDataToSend.append('sec_img3', certFile); // Certificate as sec_img3
       if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
-  
+      if (formData.product_vid2) formDataToSend.append('product_video2', formData.product_vid2);
+      if (formData.product_gif) formDataToSend.append('product_gif', formData.product_gif);
+
       // Debug: Log all FormData entries
       for (let [key, value] of formDataToSend.entries()) {
         console.log(`FormData Entry: ${key}`, value);
       }
-  
-      // Send the request
-      const response = await userRequest({
+
+      // Make the API call without assigning to a variable since we're not using the response
+      await userRequest({
         url: "/product/create-product",
         method: "POST",
         data: formDataToSend,
@@ -523,14 +539,14 @@ const AddProductForm = () => {
           'Content-Type': 'multipart/form-data',
         }
       });
-  
+
       // Handle success
       toast.success("Product created successfully!");
       // Reset form...
-      
+
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error(error.message || "Failed to create product");
+      toast.error((error as Error).message || "Failed to update product");
     }
   };
 
@@ -678,7 +694,9 @@ const AddProductForm = () => {
                 {renderFileInput("base_img", "Base Image")}
                 {renderFileInput("sec_img1", "Secondary Image 1")}
                 {renderFileInput("sec_img2", "Secondary Image 2")}
-                {renderFileInput("product_vid", "Product Video")}
+                {renderFileInput("product_vid", "Product Video 1")}
+                {renderFileInput("product_vid2", "Product Video 2")} {/* Additional video */}
+                {renderFileInput("product_gif", "Product GIF")}     {/* GIF field */}
               </div>
             </div>
 
