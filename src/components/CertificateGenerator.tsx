@@ -120,7 +120,7 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
             <p className="text-xs">A venture by alumni of IGI</p>
           </div>
           <div className="text-right">
-            <p className="font-bold">{formData.name || 'Shree Lekha'}</p>
+            <p className="font-bold">{'CUSTOMER NAME'}</p>
           </div>
         </div>
 
@@ -130,53 +130,53 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
           <div className="space-y-2 text-sm">
             <div className="grid grid-cols-2 gap-2">
               <p className="font-medium">Certificate No.</p>
-              <p className="font-bold">{formData.certificate_no || 'GEM-72805'}</p>
+              <p className="font-bold">{formData.certificate_no || ''}</p>
 
               <p className="font-medium">Weight</p>
-              <p>{formData.weight_ratti ? `${formData.weight_ratti} RATTI` : '7 RATTI'}</p>
+              <p>{formData.weight_ratti ? `${formData.weight_ratti} RATTI` : ''}</p>
 
               <p className="font-medium">Shape and Cut</p>
-              <p>{formData.shape_cut || 'Cabochon Cut'}</p>
+              <p>{formData.shape_cut || ''}</p>
 
               <p className="font-medium">Colour</p>
-              <p>{formData.color || 'Whitish'}</p>
+              <p>{formData.color || ''}</p>
 
               <p className="font-medium">Transparency</p>
-              <p>{formData.transparency || 'Opaque'}</p>
+              <p>{formData.transparency || ''}</p>
 
               <p className="font-medium">Dimension (L.B.H.in mm)</p>
               <p>
                 {formData.length && formData.width && formData.height
                   ? `${formData.length.toFixed(2)}×${formData.width.toFixed(2)}×${formData.height.toFixed(2)}`
-                  : '17.36×12.17×6.70'}
+                  : ''}
               </p>
 
               <p className="font-medium">Ref. Index</p>
-              <p>{formData.ref_index || '1.45'}</p>
+              <p>{formData.ref_index || ''}</p>
 
               <p className="font-medium">Hardness</p>
-              <p>{formData.hardness || '5 to 6(1/2)'}</p>
+              <p>{formData.hardness || ''}</p>
 
               <p className="font-medium">SP. Gravity</p>
-              <p>{formData.sp_gravity || '2.15; 0.08, -0.90'}</p>
+              <p>{formData.sp_gravity || ''}</p>
 
               <p className="font-medium">Luminescence</p>
-              <p>{formData.luminescence || 'LW&SW- Inert to strong'}</p>
+              <p>{formData.luminescence || ''}</p>
 
               <p className="font-medium">Op. Char, Crystal Sys</p>
               <p>
-                {formData.op_char ? `${formData.op_char}, ` : 'SR, '}
-                {formData.crystal_sys || 'Amorphous'}
+                {formData.op_char ? `${formData.op_char}, ` : ''}
+                {formData.crystal_sys || ''}
               </p>
 
               <p className="font-medium">Inclusion</p>
-              <p>{formData.inclusion || 'NATURAL INCLUSION'}</p>
+              <p>{formData.inclusion || ''}</p>
 
               <p className="font-medium">Species</p>
-              <p>{formData.species || 'OPAL'}</p>
+              <p>{formData.species || ''}</p>
 
               <p className="font-medium">Variety</p>
-              <p>{formData.variety || 'NATURAL OPAL'}</p>
+              <p>{formData.variety || ''}</p>
             </div>
           </div>
 
@@ -210,7 +210,7 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
         {/* Footer */}
         <div className="mt-4 pt-2 border-t border-gray-300 text-center">
           <p className="text-xs font-medium text-red-600">
-            VERIFY YOUR REPORT ONLINE - www.igigemlab.in
+            THIS IS A SYSTEM GENERATED SAMPLE CERTIFICATE - www.igigemlab.in
           </p>
         </div>
       </div>

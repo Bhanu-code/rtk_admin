@@ -444,31 +444,36 @@ const AddProductForm = () => {
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-
+  
       const isImageField = fieldName.includes('img');
-      const isVideoField = fieldName === 'product_vid';
+      const isVideoField = fieldName.includes('product_vid');
       const isGifField = fieldName === 'product_gif';
-
-      // Corrected condition with proper parentheses
-      if (
-        (isImageField && !file.type.startsWith('image/')) ||
-        (isVideoField && !file.type.startsWith('video/')) ||
-        (isGifField && !file.type.startsWith('image/gif'))
-      ) {
-        toast.error(
-          isImageField
-            ? 'Please select a valid image file'
-            : isVideoField
-              ? 'Please select a valid video file'
-              : 'Please select a valid GIF file',
-          {
-            position: "bottom-right",
-            duration: 2000
-          }
-        );
+  
+      // Validate file types more strictly
+      if (isGifField && !file.type.includes('gif')) {
+        toast.error('Please select a valid GIF file', {
+          position: "bottom-right",
+          duration: 2000
+        });
         return;
       }
-
+  
+      if (isVideoField && !file.type.includes('video')) {
+        toast.error('Please select a valid video file', {
+          position: "bottom-right",
+          duration: 2000
+        });
+        return;
+      }
+  
+      if (isImageField && !file.type.includes('image')) {
+        toast.error('Please select a valid image file', {
+          position: "bottom-right",
+          duration: 2000
+        });
+        return;
+      }
+  
       setFormData(prev => ({
         ...prev,
         [fieldName]: file,
@@ -554,20 +559,30 @@ const AddProductForm = () => {
     fieldName: ImageFieldName,
     label: string
   ) => {
-    const accept = fieldName === 'product_vid' ? 'video/*' : 'image/*';
+    // Set specific accept attributes for each field type
+    let accept = '';
+    if (fieldName === 'product_gif') {
+      accept = 'image/gif';
+    } else if (fieldName.includes('product_vid')) {
+      accept = 'video/*';
+    } else {
+      accept = 'image/*';
+    }
+  
     const currentValue = formData[fieldName];
-
+  
     return (
       <div className="space-y-2">
-        <Label htmlFor={fieldName}>{label}</Label>
+        <Label htmlFor={fieldName}>{label} {fieldName === 'base_img' && <span className="text-red-500 ml-1">*</span>}</Label>
         <div className="space-y-2">
-          <Input
-            id={fieldName}
-            type="file"
-            accept={accept}
-            onChange={(e) => handleFileChange(e, fieldName)}
-            className="mb-2"
-          />
+        <Input
+          id={fieldName}
+          type="file"
+          accept={accept}
+          onChange={(e) => handleFileChange(e, fieldName)}
+          className="mb-2"
+          required={fieldName === 'base_img'} // Only required for base image
+        />
           <FilePreview
             file={currentValue}
             onRemove={() => handleFileRemove(fieldName)}
@@ -695,8 +710,8 @@ const AddProductForm = () => {
                 {renderFileInput("sec_img1", "Secondary Image 1")}
                 {renderFileInput("sec_img2", "Secondary Image 2")}
                 {renderFileInput("product_vid", "Product Video 1")}
-                {renderFileInput("product_vid2", "Product Video 2")} {/* Additional video */}
-                {renderFileInput("product_gif", "Product GIF")}     {/* GIF field */}
+                {renderFileInput("product_vid2", "Product Video 2")}
+                {renderFileInput("product_gif", "Product GIF")}    
               </div>
             </div>
 
