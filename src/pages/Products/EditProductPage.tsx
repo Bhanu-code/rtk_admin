@@ -192,6 +192,7 @@ const EditProductForm = () => {
 
   const [dimensionString, setDimensionString] = useState("");
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   // const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
   // const [certImageFile, setCertImageFile] = useState<File | null>(null);
 
@@ -292,13 +293,12 @@ const EditProductForm = () => {
   };
 
   // Fetch product data
-  const { data, isLoading: loadingProduct } = useQuery(
+  const { data: response, isLoading: loadingProduct } = useQuery(
     ["get-product", id],
-    () =>
-      userRequest({
-        url: `/product/get-product/${id}`,
-        method: "get",
-      }),
+    () => userRequest({
+      url: `/product/get-product/${id}`,
+      method: "get",
+    }),
     {
       onError: () => {
         toast.error("Failed to fetch product details", {
@@ -310,26 +310,32 @@ const EditProductForm = () => {
   );
 
   useEffect(() => {
-    if (data) {
-      const { product, attribute } = data.data;
+    if (response?.data) {
+      // Check the actual response structure here
+      console.log("API Response:", response.data);
+      
+      // Adjust this destructuring based on actual response structure
+      const productData = response.data.product || response.data;
+      const attributeData = response.data.attribute || {};
+  
       setFormData(prev => ({
         ...prev,
-        ...product,
-        ...attribute,
-        base_img_url: product.base_img_url,
-        sec_img1_url: product.sec_img1_url,
-        sec_img2_url: product.sec_img2_url,
-        sec_img3_url: product.sec_img3_url,
-        product_vid_url: product.product_vid_url,
-        product_vid2_url: product.product_video2_url, // Add this
-        product_gif_url: product.product_gif_url,     // Add this
+        ...productData,
+        ...attributeData,
+        base_img_url: productData.base_img_url,
+        sec_img1_url: productData.sec_img1_url,
+        sec_img2_url: productData.sec_img2_url,
+        sec_img3_url: productData.sec_img3_url,
+        product_vid_url: productData.product_vid_url,
+        product_vid2_url: productData.product_video2_url,
+        product_gif_url: productData.product_gif_url,
       }));
-
-      if (attribute?.length && attribute?.width && attribute?.height) {
-        setDimensionString(`${attribute.length} x ${attribute.width} x ${attribute.height}`);
+  
+      if (attributeData?.length && attributeData?.width && attributeData?.height) {
+        setDimensionString(`${attributeData.length} x ${attributeData.width} x ${attributeData.height}`);
       }
     }
-  }, [data]);
+  }, [response]);
 
   function extractDimensions(input: string) {
     if (!input) return null;
@@ -511,6 +517,16 @@ const EditProductForm = () => {
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      setUploadProgress(prev => ({...prev, [fieldName]: 0}));
+
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev[fieldName] + 10;
+          if (newProgress >= 100) clearInterval(interval);
+          return {...prev, [fieldName]: newProgress};
+        });
+      }, 200);
+
       const isImageField = fieldName.includes('img');
       const isVideoField = fieldName === 'product_vid';
       const isGifField = fieldName === 'product_gif';
@@ -554,9 +570,21 @@ const EditProductForm = () => {
     }));
   };
 
+  const validateForm = () => {
+    if (!formData.name) {
+      toast.error("Product name is required");
+      return false;
+    }
+    if (!formData.category) {
+      toast.error("Category is required");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateDimensions()) return;
+    if (!validateForm() || !validateDimensions()) return;
 
     try {
 
@@ -581,30 +609,48 @@ const EditProductForm = () => {
       //   }
       // });
 
+    // Convert null values to empty strings for all URL fields
+    const sanitizedFormData = {
+      ...formData,
+      sec_img1_url: formData.sec_img1_url || "",
+      sec_img2_url: formData.sec_img2_url || "",
+      sec_img3_url: formData.sec_img3_url || "",
+      product_vid_url: formData.product_vid_url || "",
+      product_vid2_url: formData.product_vid2_url || "",
+      product_gif_url: formData.product_gif_url || "",
+    };
+
+    Object.keys(sanitizedFormData).forEach(key => {
+      if (!['base_img', 'sec_img1', 'sec_img2', 'sec_img3', 'product_vid', 'product_vid2', 'product_gif'].includes(key)) {
+        formDataToSend.append(key, String(sanitizedFormData[key]));
+      }
+    });
+
+
       // Split data into product and attribute fields based on your schema
-      const productFields = [
-        'name', 'description', 'sku', 'category', 'subcategory',
-        'quantity', 'actual_price', 'sale_price', 'status'
-      ];
+      // const productFields = [
+      //   'name', 'description', 'sku', 'category', 'subcategory',
+      //   'quantity', 'actual_price', 'sale_price', 'status'
+      // ];
 
-      const attributeFields = [
-        'origin', 'weight_gms', 'weight_carat', 'weight_ratti',
-        'length', 'width', 'height', 'shape', 'cut', 'treatment',
-        'composition', 'certification', 'color', 'certificate_no',
-        'luminescence', 'op_char', 'crystal_sys', 'shape_cut',
-        'transparency', 'ref_index', 'hardness', 'sp_gravity',
-        'inclusion', 'species', 'variety', 'other_chars', 'visual_chars'
-      ];
+      // const attributeFields = [
+      //   'origin', 'weight_gms', 'weight_carat', 'weight_ratti',
+      //   'length', 'width', 'height', 'shape', 'cut', 'treatment',
+      //   'composition', 'certification', 'color', 'certificate_no',
+      //   'luminescence', 'op_char', 'crystal_sys', 'shape_cut',
+      //   'transparency', 'ref_index', 'hardness', 'sp_gravity',
+      //   'inclusion', 'species', 'variety', 'other_chars', 'visual_chars'
+      // ];
 
-      // Append product fields
-      productFields.forEach(field => {
-        formDataToSend.append(field, String(formData[field]));
-      });
+      // // Append product fields
+      // productFields.forEach(field => {
+      //   formDataToSend.append(field, String(formData[field]));
+      // });
 
-      // Append attribute fields
-      attributeFields.forEach(field => {
-        formDataToSend.append(field, String(formData[field]));
-      });
+      // // Append attribute fields
+      // attributeFields.forEach(field => {
+      //   formDataToSend.append(field, String(formData[field]));
+      // });
 
       // Handle file uploads
 
