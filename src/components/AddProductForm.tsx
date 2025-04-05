@@ -32,6 +32,7 @@ interface ProductFormData {
   product_vid2: File | null; // Additional video
   product_gif: File | null;  // GIF field
   cert_img_url: string;
+  unit_price: number;
   name: string;
   description: string;
   sku_code: string;
@@ -137,6 +138,7 @@ const AddProductForm = () => {
     product_vid2: null,
     product_gif: null,
     cert_img_url: "",
+    unit_price: 0,
     name: "",
     description: "",
     sku_code: "",
@@ -176,9 +178,19 @@ const AddProductForm = () => {
   });
 
   const [dimensionString, setDimensionString] = useState("");
+  const [isGemstone, setIsGemstone] = useState(false);
 
   // const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
   // const [certImageFile, setCertImageFile] = useState<File | null>(null);
+
+  const handleCategoryChange = (value: string) => {
+    setIsGemstone(value === 'gemstones');
+    setFormData(prev => ({
+      ...prev,
+      category: value,
+      quantity: value === 'gemstones' ? 1 : prev.quantity
+    }));
+  };
 
   function extractDimensions(input: string) {
     if (!input) return null;
@@ -288,6 +300,34 @@ const AddProductForm = () => {
   //   // 4. Convert canvas to data URL
   // };
 
+
+  const handleWeightGramsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const grams = parseFloat(e.target.value) || 0;
+    const milligrams = grams * 1000;
+    const ratti = milligrams / 180;
+    const carat = milligrams / 200;
+    const actualPrice = formData.unit_price * ratti;
+
+    setFormData(prev => ({
+      ...prev,
+      weight_gms: grams,
+      weight_ratti: parseFloat(ratti.toFixed(2)),
+      weight_carat: parseFloat(carat.toFixed(2)),
+      actual_price: actualPrice
+    }));
+  };
+
+  const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const unitPrice = parseFloat(e.target.value) || 0;
+    const actualPrice = unitPrice * formData.weight_ratti;
+
+    setFormData(prev => ({
+      ...prev,
+      unit_price: unitPrice,
+      actual_price: actualPrice
+    }));
+  };
+
   const createProductMutation = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error('Authentication token is missing');
@@ -339,6 +379,7 @@ const AddProductForm = () => {
         category: "",
         subcategory: "",
         quantity: 1,
+        unit_price: 0,
         actual_price: 0,
         sale_price: 0,
         status: "Draft",
@@ -444,11 +485,11 @@ const AddProductForm = () => {
   ) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-  
+
       const isImageField = fieldName.includes('img');
       const isVideoField = fieldName.includes('product_vid');
       const isGifField = fieldName === 'product_gif';
-  
+
       // Validate file types more strictly
       if (isGifField && !file.type.includes('gif')) {
         toast.error('Please select a valid GIF file', {
@@ -457,7 +498,7 @@ const AddProductForm = () => {
         });
         return;
       }
-  
+
       if (isVideoField && !file.type.includes('video')) {
         toast.error('Please select a valid video file', {
           position: "bottom-right",
@@ -465,7 +506,7 @@ const AddProductForm = () => {
         });
         return;
       }
-  
+
       if (isImageField && !file.type.includes('image')) {
         toast.error('Please select a valid image file', {
           position: "bottom-right",
@@ -473,7 +514,7 @@ const AddProductForm = () => {
         });
         return;
       }
-  
+
       setFormData(prev => ({
         ...prev,
         [fieldName]: file,
@@ -568,21 +609,21 @@ const AddProductForm = () => {
     } else {
       accept = 'image/*';
     }
-  
+
     const currentValue = formData[fieldName];
-  
+
     return (
       <div className="space-y-2">
         <Label htmlFor={fieldName}>{label} {fieldName === 'base_img' && <span className="text-red-500 ml-1">*</span>}</Label>
         <div className="space-y-2">
-        <Input
-          id={fieldName}
-          type="file"
-          accept={accept}
-          onChange={(e) => handleFileChange(e, fieldName)}
-          className="mb-2"
-          required={fieldName === 'base_img'} // Only required for base image
-        />
+          <Input
+            id={fieldName}
+            type="file"
+            accept={accept}
+            onChange={(e) => handleFileChange(e, fieldName)}
+            className="mb-2"
+            required={fieldName === 'base_img'} // Only required for base image
+          />
           <FilePreview
             file={currentValue}
             onRemove={() => handleFileRemove(fieldName)}
@@ -601,445 +642,493 @@ const AddProductForm = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Product</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Status */}
-            <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <Label htmlFor="status" className="font-medium">
-                  Product Status
-                </Label>
+    // <div className="container mx-auto mb-10 p-6 h-full overflow-y-auto"> 
+    <Card>
+      <CardHeader>
+        <CardTitle>Add New Product</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Status */}
+          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center space-x-4">
+              <Label htmlFor="status" className="font-medium">
+                Product Status
+              </Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Feature">Feature</SelectItem>
+                  <SelectItem value="Public">Public</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${formData.status === 'Public'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+                }`}>
+                {formData.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Product Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
                 <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleSelectChange("status", value)}
+                  onValueChange={handleCategoryChange}
+                  value={formData.category}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select status" />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Draft">Draft</SelectItem>
-                    <SelectItem value="Feature">Feature</SelectItem>
-                    <SelectItem value="Public">Public</SelectItem>
+                    <SelectItem value="gemstones">Gemstones</SelectItem>
+                    <SelectItem value="jewelry">Jewelry</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${formData.status === 'Public'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
-                  }`}>
-                  {formData.status}
-                </span>
-              </div>
             </div>
 
-            {/* Basic Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Basic Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Product Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("category", value)}
-                    value={formData.category}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gemstones">Gemstones</SelectItem>
-                      <SelectItem value="jewelry">Jewelry</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="subcategory">Sub-Category</Label>
+              <Input
+                id="subcategory"
+                name="subcategory"
+                value={formData.subcategory}
+                onChange={handleInputChange}
+                placeholder="Enter sub-category"
+              />
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="sku_code">SKU Code</Label>
+              <Input
+                id="sku_code"
+                name="sku_code"
+                value={formData.sku_code}
+                onChange={handleInputChange}
+                placeholder="Enter SKU Code"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          {/* Images and Media */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Images and Media</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {renderFileInput("base_img", "Base Image")}
+              {renderFileInput("sec_img1", "Secondary Image 1")}
+              {renderFileInput("sec_img2", "Secondary Image 2")}
+              {renderFileInput("product_vid", "Product Video 1")}
+              {renderFileInput("product_vid2", "Product Video 2")}
+              {renderFileInput("product_gif", "Product GIF")}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Certificate Preview</h3>
+            <div className="border rounded-lg p-4 overflow-auto">
+              <div className="mx-auto" style={{ maxWidth: '800px' }}>
+                <CertificateGenerator
+                  ref={certificateRef}
+                  formData={formData}
+                  baseImageUrl={formData.base_img ? URL.createObjectURL(formData.base_img) : null}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate Fields */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Certificate Fields</h3>
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="subcategory">Sub-Category</Label>
+                <Label htmlFor="certificate_no">Certificate No</Label>
                 <Input
-                  id="subcategory"
-                  name="subcategory"
-                  value={formData.subcategory}
+                  id="certificate_no"
+                  name="certificate_no"
+                  value={formData.certificate_no}
                   onChange={handleInputChange}
-                  placeholder="Enter sub-category"
+                  readOnly
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sku_code">SKU Code</Label>
+                <Label htmlFor="weight_ratti">Weight (ratti)</Label>
                 <Input
-                  id="sku_code"
-                  name="sku_code"
-                  value={formData.sku_code}
+                  id="weight_ratti"
+                  name="weight_ratti"
+                  type="number"
+                  value={formData.weight_ratti}
+                  disabled
+                />
+                {formData.weight_gms > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="shape_cut">Shape & Cut</Label>
+                <Input
+                  id="shape_cut"
+                  name="shape_cut"
+                  value={formData.shape_cut}
                   onChange={handleInputChange}
-                  placeholder="Enter SKU Code"
+                  placeholder="e.g., Round Brilliant"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
+                <Label htmlFor="color">Color</Label>
+                <Input
+                  id="color"
+                  name="color"
+                  value={formData.color}
                   onChange={handleInputChange}
-                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="transparency">Transparency</Label>
+                <Input
+                  id="transparency"
+                  name="transparency"
+                  value={formData.transparency}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dimensions">Dimensions (L x W x H in mm)</Label>
+                <Input
+                  id="dimensions"
+                  name="dimensions"
+                  placeholder="e.g., 10 x 5 x 3"
+                  value={dimensionString}
+                  onChange={handleDimensionChange}
+                />
+                {formData.length && formData.width && formData.height && (
+                  <div className="text-sm text-muted-foreground">
+                    Stored as: Length: {formData.length}mm, Width: {formData.width}mm, Height: {formData.height}mm
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ref_index">Refractive Index</Label>
+                <Input
+                  id="ref_index"
+                  name="ref_index"
+                  value={formData.ref_index}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="hardness">Hardness</Label>
+                <Input
+                  id="hardness"
+                  name="hardness"
+                  value={formData.hardness}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sp_gravity">Specific Gravity</Label>
+                <Input
+                  id="sp_gravity"
+                  name="sp_gravity"
+                  value={formData.sp_gravity}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="luminescence">Luminescence</Label>
+                <Input
+                  id="luminescence"
+                  name="luminescence"
+                  value={formData.luminescence}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="op_char">Optical Characteristics</Label>
+                <Input
+                  id="op_char"
+                  name="op_char"
+                  value={formData.op_char}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="crystal_sys">Crystal System</Label>
+                <Input
+                  id="crystal_sys"
+                  name="crystal_sys"
+                  value={formData.crystal_sys}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="inclusion">Inclusion</Label>
+                <Input
+                  id="inclusion"
+                  name="inclusion"
+                  value={formData.inclusion}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="species">Species</Label>
+                <Input
+                  id="species"
+                  name="species"
+                  value={formData.species}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="variety">Variety</Label>
+                <Input
+                  id="variety"
+                  name="variety"
+                  value={formData.variety}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
+          </div>
 
-            {/* Images and Media */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Images and Media</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {renderFileInput("base_img", "Base Image")}
-                {renderFileInput("sec_img1", "Secondary Image 1")}
-                {renderFileInput("sec_img2", "Secondary Image 2")}
-                {renderFileInput("product_vid", "Product Video 1")}
-                {renderFileInput("product_vid2", "Product Video 2")}
-                {renderFileInput("product_gif", "Product GIF")}    
+          {/* Physical Properties */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Physical Properties</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="weight_gms">Weight (grams)</Label>
+                <Input
+                  id="weight_gms"
+                  name="weight_gms"
+                  type="number"
+                  value={formData.weight_gms}
+                  onChange={handleWeightGramsChange}
+                  step="0.01" // Allows decimal input
+                />
+                {formData.weight_gms > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {formData.weight_gms * 1000} milligrams
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight_carat">Weight (carat)</Label>
+                <Input
+                  id="weight_carat"
+                  name="weight_carat"
+                  type="number"
+                  value={formData.weight_carat}
+                  disabled
+                />
+                {formData.weight_gms > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated: {formData.weight_gms * 1000}mg ÷ 200
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight_ratti">Weight (ratti)</Label>
+                <Input
+                  id="weight_ratti"
+                  name="weight_ratti"
+                  type="number"
+                  value={formData.weight_ratti}
+                  disabled
+                />
+                {formData.weight_gms > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                  </p>
+                )}
               </div>
             </div>
+          </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Certificate Preview</h3>
-              <div className="border rounded-lg p-4 overflow-auto">
-                <div className="mx-auto" style={{ maxWidth: '800px' }}>
-                  <CertificateGenerator
-                    ref={certificateRef}
-                    formData={formData}
-                    baseImageUrl={formData.base_img ? URL.createObjectURL(formData.base_img) : null}
-                  />
-                </div>
+          {/* Characteristics */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Characteristics</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="origin">Origin</Label>
+                <Input
+                  id="origin"
+                  name="origin"
+                  value={formData.origin}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="treatment">Treatment</Label>
+                <Input
+                  id="treatment"
+                  name="treatment"
+                  value={formData.treatment}
+                  onChange={handleInputChange}
+                  placeholder="Enter treatment details"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="composition">Composition</Label>
+                <Input
+                  id="composition"
+                  name="composition"
+                  value={formData.composition}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="certification">Certification</Label>
+                <select
+                  id="certification"
+                  name="certification"
+                  value={formData.certification}
+                  onChange={(e) => handleSelectChange("certification", e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                >
+                  <option value="">Select certification</option>
+                  <option value="Local Lab Certification">Local Lab Certification (Free Certification)</option>
+                  <option value="IGI">IGI</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="other_chars">Other Characteristics</Label>
+                <Input
+                  id="other_chars"
+                  name="other_chars"
+                  value={formData.other_chars}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="visual_chars">Visual Characteristics</Label>
+                <Input
+                  id="visual_chars"
+                  name="visual_chars"
+                  value={formData.visual_chars}
+                  onChange={handleInputChange}
+                />
               </div>
             </div>
+          </div>
 
-            {/* Certificate Fields */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Certificate Fields</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="certificate_no">Certificate No</Label>
-                  <Input
-                    id="certificate_no"
-                    name="certificate_no"
-                    value={formData.certificate_no}
-                    onChange={handleInputChange}
-                    readOnly
-                  />
-                </div>
+          {/* Pricing */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Pricing</h3>
+            <div className="grid grid-cols-3 gap-4">
+              {/* Add this new unit price field */}
+              <div className="space-y-2">
+                <Label htmlFor="unit_price">Unit Price (per ratti)</Label>
+                <Input
+                  id="unit_price"
+                  name="unit_price"
+                  type="number"
+                  value={formData.unit_price}
+                  onChange={handleUnitPriceChange}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="weight_ratti">Weight (ratti)</Label>
-                  <Input
-                    id="weight_ratti"
-                    name="weight_ratti"
-                    type="number"
-                    value={formData.weight_ratti}
-                    onChange={handleInputChange}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="actual_price">Actual Price</Label>
+                <Input
+                  id="actual_price"
+                  name="actual_price"
+                  type="number"
+                  value={formData.actual_price}
+                  onChange={handleInputChange}
+                  readOnly // Make it read-only since it's calculated
+                />
+                {formData.unit_price > 0 && formData.weight_ratti > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Calculated: {formData.unit_price} × {formData.weight_ratti} ratti
+                  </p>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="shape_cut">Shape & Cut</Label>
-                  <Input
-                    id="shape_cut"
-                    name="shape_cut"
-                    value={formData.shape_cut}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Round Brilliant"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="sale_price">Sale Price</Label>
+                <Input
+                  id="sale_price"
+                  name="sale_price"
+                  type="number"
+                  value={formData.sale_price}
+                  onChange={handleInputChange}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="color">Color</Label>
-                  <Input
-                    id="color"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="transparency">Transparency</Label>
-                  <Input
-                    id="transparency"
-                    name="transparency"
-                    value={formData.transparency}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dimensions">Dimensions (L x W x H in mm)</Label>
-                  <Input
-                    id="dimensions"
-                    name="dimensions"
-                    placeholder="e.g., 10 x 5 x 3"
-                    value={dimensionString}
-                    onChange={handleDimensionChange}
-                  />
-                  {formData.length && formData.width && formData.height && (
-                    <div className="text-sm text-muted-foreground">
-                      Stored as: Length: {formData.length}mm, Width: {formData.width}mm, Height: {formData.height}mm
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ref_index">Refractive Index</Label>
-                  <Input
-                    id="ref_index"
-                    name="ref_index"
-                    value={formData.ref_index}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="hardness">Hardness</Label>
-                  <Input
-                    id="hardness"
-                    name="hardness"
-                    value={formData.hardness}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="sp_gravity">Specific Gravity</Label>
-                  <Input
-                    id="sp_gravity"
-                    name="sp_gravity"
-                    value={formData.sp_gravity}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="luminescence">Luminescence</Label>
-                  <Input
-                    id="luminescence"
-                    name="luminescence"
-                    value={formData.luminescence}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="op_char">Optical Characteristics</Label>
-                  <Input
-                    id="op_char"
-                    name="op_char"
-                    value={formData.op_char}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="crystal_sys">Crystal System</Label>
-                  <Input
-                    id="crystal_sys"
-                    name="crystal_sys"
-                    value={formData.crystal_sys}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="inclusion">Inclusion</Label>
-                  <Input
-                    id="inclusion"
-                    name="inclusion"
-                    value={formData.inclusion}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="species">Species</Label>
-                  <Input
-                    id="species"
-                    name="species"
-                    value={formData.species}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="variety">Variety</Label>
-                  <Input
-                    id="variety"
-                    name="variety"
-                    value={formData.variety}
-                    onChange={handleInputChange}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  name="quantity"
+                  type="number"
+                  value={formData.quantity}
+                  onChange={handleInputChange}
+                  disabled={isGemstone}
+                />
               </div>
             </div>
+          </div>
 
-            {/* Physical Properties */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Physical Properties</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weight_gms">Weight (gms)</Label>
-                  <Input
-                    id="weight_gms"
-                    name="weight_gms"
-                    type="number"
-                    value={formData.weight_gms}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight_carat">Weight (carat)</Label>
-                  <Input
-                    id="weight_carat"
-                    name="weight_carat"
-                    type="number"
-                    value={formData.weight_carat}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight_ratti">Weight (ratti)</Label>
-                  <Input
-                    id="weight_ratti"
-                    name="weight_ratti"
-                    type="number"
-                    value={formData.weight_ratti}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Characteristics */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Characteristics</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="origin">Origin</Label>
-                  <Input
-                    id="origin"
-                    name="origin"
-                    value={formData.origin}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="treatment">Treatment</Label>
-                  <Input
-                    id="treatment"
-                    name="treatment"
-                    value={formData.treatment}
-                    onChange={handleInputChange}
-                    placeholder="Enter treatment details"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="composition">Composition</Label>
-                  <Input
-                    id="composition"
-                    name="composition"
-                    value={formData.composition}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="certification">Certification</Label>
-                  <Input
-                    id="certification"
-                    name="certification"
-                    value={formData.certification}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="other_chars">Other Characteristics</Label>
-                  <Input
-                    id="other_chars"
-                    name="other_chars"
-                    value={formData.other_chars}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="visual_chars">Visual Characteristics</Label>
-                  <Input
-                    id="visual_chars"
-                    name="visual_chars"
-                    value={formData.visual_chars}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Pricing</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="actual_price">Actual Price</Label>
-                  <Input
-                    id="actual_price"
-                    name="actual_price"
-                    type="number"
-                    value={formData.actual_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sale_price">Sale Price</Label>
-                  <Input
-                    id="sale_price"
-                    name="sale_price"
-                    type="number"
-                    value={formData.sale_price}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={createProductMutation.isLoading}
-            >
-              {createProductMutation.isLoading ? "Creating..." : "Create Product"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={createProductMutation.isLoading}
+          >
+            {createProductMutation.isLoading ? "Creating..." : "Create Product"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+    // </div>
   );
 };
 
