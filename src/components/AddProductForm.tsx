@@ -29,36 +29,36 @@ interface ProductFormData {
   sec_img2: File | null;
   sec_img3: File | null;
   product_vid: File | null;
-  product_vid2: File | null; // Additional video
-  product_gif: File | null;  // GIF field
+  product_vid2: File | null;
+  product_gif: File | null;
   cert_img_url: string;
-  unit_price: number;
+  unit_price: string; // Changed to string
   name: string;
   description: string;
   sku_code: string;
   category: string;
   subcategory: string;
-  quantity: number;
-  actual_price: number;
-  sale_price: number;
+  quantity: string; // Changed to string
+  actual_price: string; // Changed to string
+  sale_price: string; // Changed to string
   origin: string;
-  weight_gms: number;
-  weight_carat: number;
-  weight_ratti: number;
-  length: number;
-  width: number;
-  height: number;
+  weight_gms: string; // Changed to string
+  weight_carat: string; // Changed to string
+  weight_ratti: string; // Changed to string
+  length: string; // Changed to string
+  width: string; // Changed to string
+  height: string; // Changed to string
   shape: string;
   cut: string;
   treatment: string;
-  composition: string;
+  // composition: string;
   certification: string;
   color: string;
   status: string;
   certificate_no: string;
-  luminescence: string;
-  op_char: string;
-  crystal_sys: string;
+  // luminescence: string;
+  // op_char: string;
+  // crystal_sys: string;
   shape_cut: string;
   transparency: string;
   ref_index: string;
@@ -68,7 +68,7 @@ interface ProductFormData {
   species: string;
   variety: string;
   other_chars: string;
-  visual_chars: string;
+  // visual_chars: string;
 }
 
 interface FilePreviewProps {
@@ -138,27 +138,27 @@ const AddProductForm = () => {
     product_vid2: null,
     product_gif: null,
     cert_img_url: "",
-    unit_price: 0,
+    unit_price: "",
     name: "",
     description: "",
     sku_code: "",
     category: "",
     subcategory: "",
-    quantity: 1,
-    actual_price: 0,
-    sale_price: 0,
+    quantity: "1",
+    actual_price: "",
+    sale_price: "",
     status: "Draft",
     origin: "",
-    weight_gms: 0,
-    weight_carat: 0,
-    weight_ratti: 0,
-    length: 0,
-    width: 0,
-    height: 0,
+    weight_gms: "",
+    weight_carat: "",
+    weight_ratti: "",
+    length: "",
+    width: "",
+    height: "",
     shape: "",
     cut: "",
     treatment: "",
-    composition: "",
+    // composition: "",
     certification: "",
     color: "",
     transparency: "",
@@ -169,26 +169,23 @@ const AddProductForm = () => {
     species: "",
     variety: "",
     other_chars: "",
-    visual_chars: "",
+    // visual_chars: "",
     certificate_no: `GEM-${Math.floor(10000 + Math.random() * 90000)}`,
-    luminescence: "",
-    op_char: "",
-    crystal_sys: "",
+    // luminescence: "",
+    // op_char: "",
+    // crystal_sys: "",
     shape_cut: "",
   });
 
   const [dimensionString, setDimensionString] = useState("");
   const [isGemstone, setIsGemstone] = useState(false);
 
-  // const [certImageUrl, setCertImageUrl] = useState<string | null>(null);
-  // const [certImageFile, setCertImageFile] = useState<File | null>(null);
-
   const handleCategoryChange = (value: string) => {
     setIsGemstone(value === 'gemstones');
     setFormData(prev => ({
       ...prev,
       category: value,
-      quantity: value === 'gemstones' ? 1 : prev.quantity
+      quantity: value === 'gemstones' ? "1" : prev.quantity
     }));
   };
 
@@ -200,9 +197,9 @@ const AddProductForm = () => {
 
     if (parts.length === 3) {
       return {
-        length: parseFloat(parts[0]) || 0,
-        width: parseFloat(parts[1]) || 0,
-        height: parseFloat(parts[2]) || 0
+        length: parts[0], // Store as string
+        width: parts[1], // Store as string
+        height: parts[2] // Store as string
       };
     }
     return null;
@@ -234,42 +231,88 @@ const AddProductForm = () => {
     return true;
   };
 
+  // Updated numeric validation to allow decimal points and handle empty values
+  const validateNumberInput = (value: string): boolean => {
+    // Allow empty string or valid number format (including decimals)
+    return value === "" || /^[0-9]*\.?[0-9]*$/.test(value);
+  };
+
+  // Handle numeric input changes
+  const handleNumericInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldName: string
+  ) => {
+    const { value } = e.target;
+
+    // Only update if valid number or empty
+    if (validateNumberInput(value)) {
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: value, // Store as string in form state
+      }));
+    }
+  };
+
   const token = useSelector((state: any) => state.user.accessToken);
+
+  // Convert form data from strings to appropriate types for API submission
+  const prepareFormDataForSubmission = () => {
+    // Create a new object with the same structure as formData but with numeric values converted
+    const processedData = { ...formData };
+
+    // Fields to convert from string to float
+    const floatFields = [
+      'unit_price', 'actual_price', 'sale_price',
+      'weight_gms', 'weight_carat', 'weight_ratti',
+      'length', 'width', 'height', 'ref_index', 'hardness', 'sp_gravity'
+    ];
+
+    // Convert string fields to numbers for API submission
+    floatFields.forEach(field => {
+      processedData[field] = processedData[field] ? parseFloat(processedData[field]) : 0;
+    });
+
+    // Convert quantity to integer
+    processedData.quantity = processedData.quantity ? parseInt(processedData.quantity, 10) : 1;
+
+    return processedData;
+  };
 
   const createFormDataWithFiles = async () => {
     const formDataToSend = new FormData();
+    const processedData = prepareFormDataForSubmission();
 
     // Log all form data entries
-    console.log("Full Form Data:", formData);
+    console.log("Full Processed Data:", processedData);
 
     // Append all text fields
-    Object.keys(formData).forEach(key => {
+    Object.keys(processedData).forEach(key => {
       if (key !== 'base_img' && key !== 'sec_img1' && key !== 'sec_img2' && key !== 'sec_img3' && key !== 'product_vid') {
-        console.log(`Appending text field: ${key} = ${formData[key]}`);
-        formDataToSend.append(key, formData[key]);
+        console.log(`Appending text field: ${key} = ${processedData[key]}`);
+        formDataToSend.append(key, String(processedData[key])); // Convert any numbers back to strings for FormData
       }
     });
 
     // Append files with logging
-    if (formData.base_img) {
-      console.log("Appending base_img:", formData.base_img);
-      formDataToSend.append('base_img', formData.base_img);
+    if (processedData.base_img) {
+      console.log("Appending base_img:", processedData.base_img);
+      formDataToSend.append('base_img', processedData.base_img);
     }
-    if (formData.sec_img1) {
-      console.log("Appending sec_img1:", formData.sec_img1);
-      formDataToSend.append('sec_img1', formData.sec_img1);
+    if (processedData.sec_img1) {
+      console.log("Appending sec_img1:", processedData.sec_img1);
+      formDataToSend.append('sec_img1', processedData.sec_img1);
     }
-    if (formData.sec_img2) {
-      console.log("Appending sec_img2:", formData.sec_img2);
-      formDataToSend.append('sec_img2', formData.sec_img2);
+    if (processedData.sec_img2) {
+      console.log("Appending sec_img2:", processedData.sec_img2);
+      formDataToSend.append('sec_img2', processedData.sec_img2);
     }
-    if (formData.sec_img3) {
-      console.log("Appending sec_img3:", formData.sec_img3);
-      formDataToSend.append('sec_img3', formData.sec_img3);
+    if (processedData.sec_img3) {
+      console.log("Appending sec_img3:", processedData.sec_img3);
+      formDataToSend.append('sec_img3', processedData.sec_img3);
     }
-    if (formData.product_vid) {
-      console.log("Appending product_video:", formData.product_vid);
-      formDataToSend.append('product_video', formData.product_vid);
+    if (processedData.product_vid) {
+      console.log("Appending product_video:", processedData.product_vid);
+      formDataToSend.append('product_video', processedData.product_vid);
     }
 
     // Log the FormData entries
@@ -279,53 +322,60 @@ const AddProductForm = () => {
 
     return formDataToSend;
   };
-  // const urlToFile = async (url: string, filename: string): Promise<File> => {
-  //   const response = await fetch(url);
-  //   const blob = await response.blob();
-  //   return new File([blob], filename, { type: blob.type });
-  // };
-
-  // const generateCertificateImage = async (baseImageUrl: string): Promise<string | null> => {
-  //   // This is a simplified version - in reality, you'd need to implement
-  //   // a proper way to generate the certificate image using a canvas library
-  //   // or a server-side solution for better reliability
-
-  //   // For demo purposes, we'll just return the base image URL
-  //   return baseImageUrl;
-
-  //   // In a real implementation, you would:
-  //   // 1. Create a canvas with the certificate template
-  //   // 2. Draw all the text fields from formData
-  //   // 3. Draw the base image in the appropriate place
-  //   // 4. Convert canvas to data URL
-  // };
-
 
   const handleWeightGramsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const grams = parseFloat(e.target.value) || 0;
-    const milligrams = grams * 1000;
-    const ratti = milligrams / 180;
-    const carat = milligrams / 200;
-    const actualPrice = formData.unit_price * ratti;
+    const gramsStr = e.target.value;
 
-    setFormData(prev => ({
-      ...prev,
-      weight_gms: grams,
-      weight_ratti: parseFloat(ratti.toFixed(2)),
-      weight_carat: parseFloat(carat.toFixed(2)),
-      actual_price: actualPrice
-    }));
+    // Validate input
+    if (!validateNumberInput(gramsStr)) return;
+
+    // Store string value
+    setFormData(prev => ({ ...prev, weight_gms: gramsStr }));
+
+    // Calculate derived values only if we have a valid number
+    if (gramsStr && !isNaN(parseFloat(gramsStr))) {
+      const grams = parseFloat(gramsStr);
+      const milligrams = grams * 1000;
+      const ratti = milligrams / 180;
+      const carat = milligrams / 200;
+
+      // If unit price exists and is valid, calculate actual price
+      let actualPrice = "0";
+      if (formData.unit_price && !isNaN(parseFloat(formData.unit_price))) {
+        actualPrice = (parseFloat(formData.unit_price) * ratti).toFixed(2);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        weight_ratti: ratti.toFixed(2),
+        weight_carat: carat.toFixed(2),
+        actual_price: actualPrice
+      }));
+    }
   };
 
   const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const unitPrice = parseFloat(e.target.value) || 0;
-    const actualPrice = unitPrice * formData.weight_ratti;
+    const unitPriceStr = e.target.value;
 
-    setFormData(prev => ({
-      ...prev,
-      unit_price: unitPrice,
-      actual_price: actualPrice
-    }));
+    // Validate input
+    if (!validateNumberInput(unitPriceStr)) return;
+
+    // Store string value
+    setFormData(prev => ({ ...prev, unit_price: unitPriceStr }));
+
+    // Calculate actual price only if both values are valid
+    if (unitPriceStr && formData.weight_ratti &&
+      !isNaN(parseFloat(unitPriceStr)) && !isNaN(parseFloat(formData.weight_ratti))) {
+
+      const unitPrice = parseFloat(unitPriceStr);
+      const weightRatti = parseFloat(formData.weight_ratti);
+      const actualPrice = (unitPrice * weightRatti).toFixed(2);
+
+      setFormData(prev => ({
+        ...prev,
+        actual_price: actualPrice
+      }));
+    }
   };
 
   const createProductMutation = useMutation({
@@ -378,18 +428,18 @@ const AddProductForm = () => {
         sku_code: "",
         category: "",
         subcategory: "",
-        quantity: 1,
-        unit_price: 0,
-        actual_price: 0,
-        sale_price: 0,
+        quantity: "1",
+        unit_price: "",
+        actual_price: "",
+        sale_price: "",
         status: "Draft",
         origin: "",
-        weight_gms: 0,
-        weight_carat: 0,
-        weight_ratti: 0,
-        length: 0,
-        width: 0,
-        height: 0,
+        weight_gms: "",
+        weight_carat: "",
+        weight_ratti: "",
+        length: "",
+        width: "",
+        height: "",
         shape: "",
         cut: "",
         treatment: "",
@@ -466,16 +516,13 @@ const AddProductForm = () => {
     }
   };
 
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    const isNumberField = e.target.type === 'number';
-
     setFormData(prev => ({
       ...prev,
-      [name]: isNumberField ? Number(value) || 0 : value,
+      [name]: value,
     }));
   };
 
@@ -549,26 +596,27 @@ const AddProductForm = () => {
         return;
       }
 
-      // Create form data
+      // Create form data with converted values
       const formDataToSend = new FormData();
+      const processedData = prepareFormDataForSubmission();
 
       // Append all text fields
-      Object.keys(formData).forEach(key => {
+      Object.keys(processedData).forEach(key => {
         if (key !== 'base_img' && key !== 'sec_img1' && key !== 'sec_img2' &&
           key !== 'sec_img3' && key !== 'product_vid' && key !== 'product_vid2' &&
           key !== 'product_gif') {
-          formDataToSend.append(key, formData[key]);
+          formDataToSend.append(key, String(processedData[key])); // Convert any numbers back to strings for FormData
         }
       });
 
       // Append files - IMPORTANT: Use the same field names as backend expects
-      if (formData.base_img) formDataToSend.append('base_img', formData.base_img);
-      if (formData.sec_img1) formDataToSend.append('sec_img1', formData.sec_img1);
-      if (formData.sec_img2) formDataToSend.append('sec_img2', formData.sec_img2);
+      if (processedData.base_img) formDataToSend.append('base_img', processedData.base_img);
+      if (processedData.sec_img1) formDataToSend.append('sec_img1', processedData.sec_img1);
+      if (processedData.sec_img2) formDataToSend.append('sec_img2', processedData.sec_img2);
       if (certFile) formDataToSend.append('sec_img3', certFile); // Certificate as sec_img3
-      if (formData.product_vid) formDataToSend.append('product_video', formData.product_vid);
-      if (formData.product_vid2) formDataToSend.append('product_video2', formData.product_vid2);
-      if (formData.product_gif) formDataToSend.append('product_gif', formData.product_gif);
+      if (processedData.product_vid) formDataToSend.append('product_video', processedData.product_vid);
+      if (processedData.product_vid2) formDataToSend.append('product_video2', processedData.product_vid2);
+      if (processedData.product_gif) formDataToSend.append('product_gif', processedData.product_gif);
 
       // Debug: Log all FormData entries
       for (let [key, value] of formDataToSend.entries()) {
@@ -642,7 +690,6 @@ const AddProductForm = () => {
   }
 
   return (
-    // <div className="container mx-auto mb-10 p-6 h-full overflow-y-auto"> 
     <Card>
       <CardHeader>
         <CardTitle>Add New Product</CardTitle>
@@ -789,13 +836,13 @@ const AddProductForm = () => {
                 <Input
                   id="weight_ratti"
                   name="weight_ratti"
-                  type="number"
+                  type="text"
                   value={formData.weight_ratti}
-                  disabled
+                  readOnly
                 />
-                {formData.weight_gms > 0 && (
+                {parseFloat(formData.weight_gms) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                    Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 180
                   </p>
                 )}
               </div>
@@ -877,7 +924,7 @@ const AddProductForm = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="luminescence">Luminescence</Label>
                 <Input
                   id="luminescence"
@@ -885,9 +932,9 @@ const AddProductForm = () => {
                   value={formData.luminescence}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="op_char">Optical Characteristics</Label>
                 <Input
                   id="op_char"
@@ -895,9 +942,9 @@ const AddProductForm = () => {
                   value={formData.op_char}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="crystal_sys">Crystal System</Label>
                 <Input
                   id="crystal_sys"
@@ -905,7 +952,7 @@ const AddProductForm = () => {
                   value={formData.crystal_sys}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
 
               <div className="space-y-2">
                 <Label htmlFor="inclusion">Inclusion</Label>
@@ -948,14 +995,13 @@ const AddProductForm = () => {
                 <Input
                   id="weight_gms"
                   name="weight_gms"
-                  type="number"
+                  type="text"
                   value={formData.weight_gms}
                   onChange={handleWeightGramsChange}
-                  step="0.01" // Allows decimal input
                 />
-                {formData.weight_gms > 0 && (
+                {parseFloat(formData.weight_gms) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {formData.weight_gms * 1000} milligrams
+                    {parseFloat(formData.weight_gms) * 1000} milligrams
                   </p>
                 )}
               </div>
@@ -964,13 +1010,13 @@ const AddProductForm = () => {
                 <Input
                   id="weight_carat"
                   name="weight_carat"
-                  type="number"
+                  type="text"
                   value={formData.weight_carat}
-                  disabled
+                  readOnly
                 />
-                {formData.weight_gms > 0 && (
+                {parseFloat(formData.weight_gms) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Calculated: {formData.weight_gms * 1000}mg ÷ 200
+                    Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 200
                   </p>
                 )}
               </div>
@@ -979,13 +1025,13 @@ const AddProductForm = () => {
                 <Input
                   id="weight_ratti"
                   name="weight_ratti"
-                  type="number"
+                  type="text"
                   value={formData.weight_ratti}
-                  disabled
+                  readOnly
                 />
-                {formData.weight_gms > 0 && (
+                {parseFloat(formData.weight_gms) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                    Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 180
                   </p>
                 )}
               </div>
@@ -1015,7 +1061,7 @@ const AddProductForm = () => {
                   placeholder="Enter treatment details"
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="composition">Composition</Label>
                 <Input
                   id="composition"
@@ -1023,7 +1069,7 @@ const AddProductForm = () => {
                   value={formData.composition}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
               <div className="space-y-2">
                 <Label htmlFor="certification">Certification</Label>
                 <select
@@ -1048,7 +1094,7 @@ const AddProductForm = () => {
                   onChange={handleInputChange}
                 />
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="visual_chars">Visual Characteristics</Label>
                 <Input
                   id="visual_chars"
@@ -1056,7 +1102,7 @@ const AddProductForm = () => {
                   value={formData.visual_chars}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -1064,13 +1110,12 @@ const AddProductForm = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Pricing</h3>
             <div className="grid grid-cols-3 gap-4">
-              {/* Add this new unit price field */}
               <div className="space-y-2">
                 <Label htmlFor="unit_price">Unit Price (per ratti)</Label>
                 <Input
                   id="unit_price"
                   name="unit_price"
-                  type="number"
+                  type="text"
                   value={formData.unit_price}
                   onChange={handleUnitPriceChange}
                 />
@@ -1081,12 +1126,11 @@ const AddProductForm = () => {
                 <Input
                   id="actual_price"
                   name="actual_price"
-                  type="number"
+                  type="text"
                   value={formData.actual_price}
-                  onChange={handleInputChange}
-                  readOnly // Make it read-only since it's calculated
+                  readOnly
                 />
-                {formData.unit_price > 0 && formData.weight_ratti > 0 && (
+                {parseFloat(formData.unit_price) > 0 && parseFloat(formData.weight_ratti) > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Calculated: {formData.unit_price} × {formData.weight_ratti} ratti
                   </p>
@@ -1098,9 +1142,9 @@ const AddProductForm = () => {
                 <Input
                   id="sale_price"
                   name="sale_price"
-                  type="number"
+                  type="text"
                   value={formData.sale_price}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleNumericInputChange(e, 'sale_price')}  
                 />
               </div>
 
@@ -1109,9 +1153,9 @@ const AddProductForm = () => {
                 <Input
                   id="quantity"
                   name="quantity"
-                  type="number"
+                  type="text"
                   value={formData.quantity}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleNumericInputChange(e, 'quantity')}
                   disabled={isGemstone}
                 />
               </div>
@@ -1128,7 +1172,6 @@ const AddProductForm = () => {
         </form>
       </CardContent>
     </Card>
-    // </div>
   );
 };
 

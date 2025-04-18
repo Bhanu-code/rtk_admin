@@ -164,7 +164,7 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
                 <>
                   <p className="font-medium">Dimension (L.B.H.in mm)</p>
                   <p>
-                    {`${formData.length.toFixed(2)}×${formData.width.toFixed(2)}×${formData.height.toFixed(2)}`}
+                    {`${parseFloat(formData.length).toFixed(2)}×${parseFloat(formData.width).toFixed(2)}×${parseFloat(formData.height).toFixed(2)}`}
                   </p>
                 </>
               )}
@@ -277,8 +277,10 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
                 alt="Ratna Kuthi Logo"
                 className="h-32 object-contain"
               />
-            </div>
 
+
+            </div>
+            <h6 className=" text-xs text-end  w-full text-red-600">SK RIZWAN GEMOLOGIST</h6> 
 
           </div>
         </div>
