@@ -371,18 +371,18 @@ const ViewProduct = () => {
                   <Label>Specific Gravity:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.sp_gravity)}</p>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Luminescence:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.luminescence)}</p>
-                </div>
-                <div className="space-y-2">
+                </div> */}
+                {/* <div className="space-y-2">
                   <Label>Optical Characteristics:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.op_char)}</p>
-                </div>
-                <div className="space-y-2">
+                </div> */}
+                {/* <div className="space-y-2">
                   <Label>Crystal System:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.crystal_sys)}</p>
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label>Inclusion:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.inclusion)}</p>
@@ -429,10 +429,10 @@ const ViewProduct = () => {
                   <Label>Treatment:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.treatment)}</p>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Composition:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.composition)}</p>
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label>Certification:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.certification)}</p>
@@ -441,10 +441,10 @@ const ViewProduct = () => {
                   <Label>Other Characteristics:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.other_chars)}</p>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Visual Characteristics:</Label>
                   <p className="text-gray-700">{formatValue(product?.data?.attribute?.visual_chars)}</p>
-                </div>
+                </div> */}
               </div>
             </div>
 

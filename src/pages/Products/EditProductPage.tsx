@@ -46,28 +46,28 @@ interface ProductFormData {
   sku_code: string;
   category: string;
   subcategory: string;
-  quantity: number;
-  unit_price: number;
-  actual_price: number;
-  sale_price: number;
+  quantity: string; // Changed to string
+  unit_price: string; // Changed to string
+  actual_price: string; // Changed to string
+  sale_price: string; // Changed to string
   origin: string;
-  weight_gms: number;
-  weight_carat: number;
-  weight_ratti: number;
-  length: number;
-  width: number;
-  height: number;
+  weight_gms: string; // Changed to string
+  weight_carat: string; // Changed to string
+  weight_ratti: string; // Changed to string
+  length: string; // Changed to string
+  width: string; // Changed to string
+  height: string; // Changed to string
   shape: string;
   cut: string;
   treatment: string;
-  composition: string;
+  // composition: string;
   certification: string;
   color: string;
   status: string;
   certificate_no: string;
-  luminescence: string;
-  op_char: string;
-  crystal_sys: string;
+  // luminescence: string;
+  // op_char: string;
+  // crystal_sys: string;
   shape_cut: string;
   transparency: string;
   ref_index: string;
@@ -77,7 +77,7 @@ interface ProductFormData {
   species: string;
   variety: string;
   other_chars: string;
-  visual_chars: string;
+  // visual_chars: string;
 }
 
 interface FilePreviewProps {
@@ -158,28 +158,28 @@ const EditProductForm = () => {
     sku_code: "",
     category: "",
     subcategory: "",
-    quantity: 1,
-    unit_price: 0,
-    actual_price: 0,
-    sale_price: 0,
+    quantity: "1",
+    unit_price: "",
+    actual_price: "",
+    sale_price: "",
     status: "Draft",
     origin: "",
-    weight_gms: 0,
-    weight_carat: 0,
-    weight_ratti: 0,
-    length: 0,
-    width: 0,
-    height: 0,
+    weight_gms: "",
+    weight_carat: "",
+    weight_ratti: "",
+    length: "",
+    width: "",
+    height: "0",
     shape: "",
     cut: "",
     treatment: "",
-    composition: "",
+    // composition: "",
     certification: "",
     color: "",
     certificate_no: `GEM-${Math.floor(10000 + Math.random() * 90000)}`,
-    luminescence: "",
-    op_char: "",
-    crystal_sys: "",
+    // luminescence: "",
+    // op_char: "",
+    // crystal_sys: "",
     shape_cut: "",
     transparency: "",
     ref_index: "",
@@ -189,7 +189,7 @@ const EditProductForm = () => {
     species: "",
     variety: "",
     other_chars: "",
-    visual_chars: "",
+    // visual_chars: "",
   });
 
   const [dimensionString, setDimensionString] = useState("");
@@ -197,12 +197,34 @@ const EditProductForm = () => {
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
   const [_uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
+  // Updated numeric validation to allow decimal points and handle empty values
+  const validateNumberInput = (value: string): boolean => {
+    // Allow empty string or valid number format (including decimals)
+    return value === "" || /^[0-9]*\.?[0-9]*$/.test(value);
+  };
+
+  // Handle numeric input changes
+  const handleNumericInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldName: string
+  ) => {
+    const { value } = e.target;
+
+    // Only update if valid number or empty
+    if (validateNumberInput(value)) {
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: value, // Store as string in form state
+      }));
+    }
+  };
+
   const handleCategoryChange = (value: string) => {
     setIsGemstone(value === 'gemstones');
     setFormData(prev => ({
       ...prev,
       category: value,
-      quantity: value === 'gemstones' ? 1 : prev.quantity
+      quantity: value === 'gemstones' ? "1" : prev.quantity
     }));
   };
 
@@ -212,9 +234,9 @@ const EditProductForm = () => {
     const parts = cleanInput.split(/x/).filter(part => part !== '');
     if (parts.length === 3) {
       return {
-        length: parseFloat(parts[0]) || 0,
-        width: parseFloat(parts[1]) || 0,
-        height: parseFloat(parts[2]) || 0
+        length: parts[0], // Store as string
+        width: parts[1], // Store as string
+        height: parts[2] // Store as string
       };
     }
     return null;
@@ -246,30 +268,58 @@ const EditProductForm = () => {
   };
 
   const handleWeightGramsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const grams = parseFloat(e.target.value) || 0;
-    const milligrams = grams * 1000;
-    const ratti = milligrams / 180;
-    const carat = milligrams / 200;
-    const actualPrice = formData.unit_price * ratti;
+    const gramsStr = e.target.value;
 
-    setFormData(prev => ({
-      ...prev,
-      weight_gms: grams,
-      weight_ratti: parseFloat(ratti.toFixed(2)),
-      weight_carat: parseFloat(carat.toFixed(2)),
-      actual_price: actualPrice
-    }));
+    // Validate input
+    if (!validateNumberInput(gramsStr)) return;
+
+    // Store string value
+    setFormData(prev => ({ ...prev, weight_gms: gramsStr }));
+
+    // Calculate derived values only if we have a valid number
+    if (gramsStr && !isNaN(parseFloat(gramsStr))) {
+      const grams = parseFloat(gramsStr);
+      const milligrams = grams * 1000;
+      const ratti = milligrams / 180;
+      const carat = milligrams / 200;
+
+      // If unit price exists and is valid, calculate actual price
+      let actualPrice = "0";
+      if (formData.unit_price && !isNaN(parseFloat(formData.unit_price))) {
+        actualPrice = (parseFloat(formData.unit_price) * ratti).toFixed(2);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        weight_ratti: ratti.toFixed(2),
+        weight_carat: carat.toFixed(2),
+        actual_price: actualPrice
+      }));
+    }
   };
 
   const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const unitPrice = parseFloat(e.target.value) || 0;
-    const actualPrice = unitPrice * formData.weight_ratti;
+    const unitPriceStr = e.target.value;
 
-    setFormData(prev => ({
-      ...prev,
-      unit_price: unitPrice,
-      actual_price: actualPrice
-    }));
+    // Validate input
+    if (!validateNumberInput(unitPriceStr)) return;
+
+    // Store string value
+    setFormData(prev => ({ ...prev, unit_price: unitPriceStr }));
+
+    // Calculate actual price only if both values are valid
+    if (unitPriceStr && formData.weight_ratti &&
+      !isNaN(parseFloat(unitPriceStr)) && !isNaN(parseFloat(formData.weight_ratti))) {
+
+      const unitPrice = parseFloat(unitPriceStr);
+      const weightRatti = parseFloat(formData.weight_ratti);
+      const actualPrice = (unitPrice * weightRatti).toFixed(2);
+
+      setFormData(prev => ({
+        ...prev,
+        actual_price: actualPrice
+      }));
+    }
   };
 
   // Fetch product data
@@ -294,12 +344,11 @@ const EditProductForm = () => {
       const productData = response.data.product || response.data;
       const attributeData = response.data.attribute || {};
 
-
-      let unitPrice = 0;
+      let unitPrice = "0";
       if (productData.actual_price && (attributeData.weight_ratti || productData.weight_ratti)) {
         const ratti = attributeData.weight_ratti || productData.weight_ratti;
         if (ratti > 0) {
-          unitPrice = Math.round((productData.actual_price / ratti) * 100) / 100;
+          unitPrice = (productData.actual_price / ratti).toFixed(2);
         }
       }
 
@@ -307,7 +356,17 @@ const EditProductForm = () => {
         ...prev,
         ...productData,
         ...attributeData,
-        unit_price: unitPrice, 
+        unit_price: unitPrice,
+        quantity: productData.quantity?.toString() || "1",
+        // unit_price: unitPrice ||"",
+        actual_price: productData.actual_price?.toString() || "0",
+        sale_price: productData.sale_price?.toString() || "0",
+        weight_gms: attributeData.weight_gms?.toString() || productData.weight_gms?.toString() || "0",
+        weight_carat: attributeData.weight_carat?.toString() || productData.weight_carat?.toString() || "0",
+        weight_ratti: attributeData.weight_ratti?.toString() || productData.weight_ratti?.toString() || "0",
+        length: attributeData.length?.toString() || "0",
+        width: attributeData.width?.toString() || "0",
+        height: attributeData.height?.toString() || "0",
         base_img_url: productData.base_img_url,
         sec_img1_url: productData.sec_img1_url,
         sec_img2_url: productData.sec_img2_url,
@@ -414,6 +473,29 @@ const EditProductForm = () => {
     }
   };
 
+  // Convert form data from strings to appropriate types for API submission
+  const prepareFormDataForSubmission = () => {
+    // Create a new object with the same structure as formData but with numeric values converted
+    const processedData = { ...formData };
+
+    // Fields to convert from string to float
+    const floatFields = [
+      'unit_price', 'actual_price', 'sale_price',
+      'weight_gms', 'weight_carat', 'weight_ratti',
+      'length', 'width', 'height', 'ref_index', 'hardness', 'sp_gravity'
+    ];
+
+    // Convert string fields to numbers for API submission
+    floatFields.forEach(field => {
+      processedData[field] = processedData[field] ? parseFloat(processedData[field]) : 0;
+    });
+
+    // Convert quantity to integer
+    processedData.quantity = processedData.quantity ? parseInt(processedData.quantity, 10) : 1;
+
+    return processedData;
+  };
+
   const updateProductMutation = useMutation({
     mutationFn: async (formDataToSend: FormData) => {
       if (!token) throw new Error('Authentication token is missing');
@@ -450,11 +532,9 @@ const EditProductForm = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    const isNumberField = e.target.type === 'number';
-
     setFormData(prev => ({
       ...prev,
-      [name]: isNumberField ? Number(value) || 0 : value,
+      [name]: value,
     }));
   };
 
@@ -541,9 +621,10 @@ const EditProductForm = () => {
       }
 
       const formDataToSend = new FormData();
+      const processedData = prepareFormDataForSubmission();
 
       const sanitizedFormData = {
-        ...formData,
+        ...processedData,
         sec_img1_url: formData.sec_img1_url || "",
         sec_img2_url: formData.sec_img2_url || "",
         sec_img3_url: formData.sec_img3_url || "",
@@ -803,13 +884,13 @@ const EditProductForm = () => {
                   <Input
                     id="weight_ratti"
                     name="weight_ratti"
-                    type="number"
+                    type="text"
                     value={formData.weight_ratti}
-                    disabled
+                    readOnly
                   />
-                  {formData.weight_gms > 0 && (
+                  {parseFloat(formData.weight_gms) > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                      Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 180
                     </p>
                   )}
                 </div>
@@ -891,7 +972,7 @@ const EditProductForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="luminescence">Luminescence</Label>
                   <Input
                     id="luminescence"
@@ -899,9 +980,9 @@ const EditProductForm = () => {
                     value={formData.luminescence}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="op_char">Optical Characteristics</Label>
                   <Input
                     id="op_char"
@@ -909,9 +990,9 @@ const EditProductForm = () => {
                     value={formData.op_char}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="crystal_sys">Crystal System</Label>
                   <Input
                     id="crystal_sys"
@@ -919,7 +1000,7 @@ const EditProductForm = () => {
                     value={formData.crystal_sys}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                   <Label htmlFor="inclusion">Inclusion</Label>
@@ -962,14 +1043,13 @@ const EditProductForm = () => {
                   <Input
                     id="weight_gms"
                     name="weight_gms"
-                    type="number"
+                    type="text"
                     value={formData.weight_gms}
                     onChange={handleWeightGramsChange}
-                    step="0.01"
                   />
-                  {formData.weight_gms > 0 && (
+                  {parseFloat(formData.weight_gms) > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      {formData.weight_gms * 1000} milligrams
+                      {parseFloat(formData.weight_gms) * 1000} milligrams
                     </p>
                   )}
                 </div>
@@ -978,13 +1058,13 @@ const EditProductForm = () => {
                   <Input
                     id="weight_carat"
                     name="weight_carat"
-                    type="number"
+                    type="text"
                     value={formData.weight_carat}
-                    disabled
+                    readOnly
                   />
-                  {formData.weight_gms > 0 && (
+                  {parseFloat(formData.weight_gms) > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Calculated: {formData.weight_gms * 1000}mg ÷ 200
+                      Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 200
                     </p>
                   )}
                 </div>
@@ -993,13 +1073,13 @@ const EditProductForm = () => {
                   <Input
                     id="weight_ratti"
                     name="weight_ratti"
-                    type="number"
+                    type="text"
                     value={formData.weight_ratti}
-                    disabled
+                    readOnly
                   />
-                  {formData.weight_gms > 0 && (
+                  {parseFloat(formData.weight_gms) > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Calculated: {formData.weight_gms * 1000}mg ÷ 180
+                      Calculated: {parseFloat(formData.weight_gms) * 1000}mg ÷ 180
                     </p>
                   )}
                 </div>
@@ -1029,7 +1109,7 @@ const EditProductForm = () => {
                     placeholder="Enter treatment details"
                   />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="composition">Composition</Label>
                   <Input
                     id="composition"
@@ -1037,7 +1117,7 @@ const EditProductForm = () => {
                     value={formData.composition}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label htmlFor="certification">Certification</Label>
                   <select
@@ -1061,7 +1141,7 @@ const EditProductForm = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="visual_chars">Visual Characteristics</Label>
                   <Input
                     id="visual_chars"
@@ -1069,7 +1149,7 @@ const EditProductForm = () => {
                     value={formData.visual_chars}
                     onChange={handleInputChange}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -1082,7 +1162,7 @@ const EditProductForm = () => {
                   <Input
                     id="unit_price"
                     name="unit_price"
-                    type="number"
+                    type="text"
                     value={formData.unit_price}
                     onChange={handleUnitPriceChange}
                   />
@@ -1092,40 +1172,37 @@ const EditProductForm = () => {
                   <Input
                     id="actual_price"
                     name="actual_price"
-                    type="number"
+                    type="text"
                     value={formData.actual_price}
-                    onChange={handleInputChange}
                     readOnly
                   />
-                  {formData.unit_price > 0 && formData.weight_ratti > 0 && (
+                  {parseFloat(formData.unit_price) > 0 && parseFloat(formData.weight_ratti) > 0 && (
                     <p className="text-xs text-muted-foreground">
                       Calculated: {formData.unit_price} × {formData.weight_ratti} ratti
                     </p>
                   )}
                 </div>
-           
-                   
                 <div className="space-y-2">
                   <Label htmlFor="sale_price">Sale Price</Label>
                   <Input
                     id="sale_price"
                     name="sale_price"
-                    type="number"
+                    type="text"
                     value={formData.sale_price}
-                    onChange={handleInputChange}
+                    onChange={(e) => handleNumericInputChange(e, 'sale_price')}
                   />
                 </div>
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  value={formData.quantity}
-                  onChange={handleInputChange}
-                  disabled={isGemstone}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity</Label>
+                  <Input
+                    id="quantity"
+                    name="quantity"
+                    type="text"
+                    value={formData.quantity}
+                    onChange={(e) => handleNumericInputChange(e, 'quantity')}
+                    disabled={isGemstone}
+                  />
+                </div>
               </div>
             </div>
 
