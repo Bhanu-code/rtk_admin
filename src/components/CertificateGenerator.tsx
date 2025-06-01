@@ -23,16 +23,16 @@ interface ProductFormData {
   sku?: string;
   category?: string;
   subcategory?: string;
-  quantity?: number;
-  actual_price?: number;
-  sale_price?: number;
+  quantity?: string | number; // Accept both string and number
+  actual_price?: string | number; // Accept both string and number
+  sale_price?: string | number; // Accept both string and number
   origin?: string;
-  weight_gms?: number;
-  weight_carat?: number;
-  weight_ratti?: number;
-  length?: number;
-  width?: number;
-  height?: number;
+  weight_gms?: string | number; // Accept both string and number
+  weight_carat?: string | number; // Accept both string and number
+  weight_ratti?: string | number; // Accept both string and number
+  length?: string | number; // Accept both string and number
+  width?: string | number; // Accept both string and number
+  height?: string | number; // Accept both string and number
   shape?: string;
   cut?: string;
   treatment?: string;
@@ -59,7 +59,7 @@ interface ProductFormData {
 interface CertificateGeneratorProps {
   formData: ProductFormData;
   baseImageUrl: string | null;
-  key?: string; // Add this line
+  key?: string;
 }
 
 export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGeneratorProps>(({
@@ -164,7 +164,7 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
                 <>
                   <p className="font-medium">Dimension (L.B.H.in mm)</p>
                   <p>
-                    {`${parseFloat(formData.length).toFixed(2)}×${parseFloat(formData.width).toFixed(2)}×${parseFloat(formData.height).toFixed(2)}`}
+                    {`${formData.length.toString()}×${formData.width.toString()}×${formData.height.toString()}`}
                   </p>
                 </>
               )}
@@ -280,7 +280,7 @@ export const CertificateGenerator = forwardRef<HTMLDivElement, CertificateGenera
 
 
             </div>
-            <h6 className=" text-xs text-end  w-full text-red-600">SK RIZWAN GEMOLOGIST</h6> 
+            <h6 className=" text-xs text-end  w-full text-red-600">GEMOLOGIST(IGI)</h6> 
 
           </div>
         </div>

@@ -1,0 +1,44 @@
+// types/product.ts
+export interface ProductFormData {
+    [key: string]: any;
+    base_img?: File | null;
+    sec_img1?: File | null;
+    sec_img2?: File | null;
+    sec_img3?: File | null;
+    product_vid?: File | null;
+    product_vid2?: File | null;
+    product_gif?: File | null;
+    cert_img_url?: string;
+    unit_price?: number | string;
+    name?: string;
+    description?: string;
+    sku_code?: string;
+    category?: string;
+    subcategory?: string;
+    quantity?: number | string;
+    actual_price?: number | string;
+    sale_price?: number | string;
+    origin?: string;
+    weight_gms?: number | string;
+    weight_carat?: number | string;
+    weight_ratti?: number | string;
+    length?: number | string;
+    width?: number | string;
+    height?: number | string;
+    shape?: string;
+    cut?: string;
+    treatment?: string;
+    certification?: string;
+    color?: string;
+    status?: string;
+    certificate_no?: string;
+    shape_cut?: string;
+    transparency?: string;
+    ref_index?: string;
+    hardness?: string;
+    sp_gravity?: string;
+    inclusion?: string;
+    species?: string;
+    variety?: string;
+    other_chars?: string;
+  }
