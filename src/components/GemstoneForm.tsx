@@ -277,7 +277,7 @@ const GemstoneForm = () => {
                   </div>
 
                   <div>
-                    <Label>Alternate Names</Label>
+                    <Label>Sub-Category</Label>
                     {formData.alternateNames.map((name, index) => (
                       <Input
                         key={index}
@@ -290,7 +290,7 @@ const GemstoneForm = () => {
                             index
                           )
                         }
-                        placeholder="Enter alternate name"
+                        placeholder="Enter Sub-Category name separated by comma's"
                         className="mt-2"
                       />
                     ))}

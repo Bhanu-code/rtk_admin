@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CertificateGenerator } from "../../components/CertificateGenerator";
+import { gemstoneProperties } from "@/utils/constants";
 import {
   Select,
   SelectContent,
@@ -189,19 +190,50 @@ const EditProductForm = () => {
     species: "",
     variety: "",
     other_chars: "",
+    isRefIndexLocked: false,
+    isSpecGravityLocked: false,
+    isHardnessLocked: false,
     // visual_chars: "",
   });
 
+  const [selectedSpecies, setSelectedSpecies] = useState(""); 
   const [dimensionString, setDimensionString] = useState("");
   const [isGemstone, setIsGemstone] = useState(false);
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
   const [_uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
   // Updated numeric validation to allow decimal points and handle empty values
-  const validateNumberInput = (value: string): boolean => {
+ const validateNumberInput = (value: string): boolean => {
     // Allow empty string or valid number format (including decimals)
     return value === "" || /^[0-9]*\.?[0-9]*$/.test(value);
   };
+
+  const handleSpeciesSelectChange = (value: string) => {
+    if (!value) return;
+
+    const selectedGemstone = gemstoneProperties[value] || {};
+    
+    setSelectedSpecies(value);
+    setFormData(prev => ({
+      ...prev,
+      species: value,
+      ref_index: selectedGemstone.refIndex || prev.ref_index,
+      sp_gravity: selectedGemstone.specGravity || prev.sp_gravity,
+      hardness: selectedGemstone.hardness || prev.hardness,
+      isRefIndexLocked: true,
+      isSpecGravityLocked: true,
+      isHardnessLocked: true
+    }));
+  };
+
+    const handleSpeciesInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      species: value
+    }));
+  };
+
 
   // Handle numeric input changes
   const handleNumericInputChange = (
@@ -267,7 +299,7 @@ const EditProductForm = () => {
     return true;
   };
 
-  const handleWeightGramsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleWeightGramsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const gramsStr = e.target.value;
 
     // Validate input
@@ -298,7 +330,7 @@ const EditProductForm = () => {
     }
   };
 
-  const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const unitPriceStr = e.target.value;
 
     // Validate input
@@ -322,8 +354,12 @@ const EditProductForm = () => {
     }
   };
 
+   const getGemstonePropertiesFromSpecies = (species:any) => {
+    return gemstoneProperties[species] || null;
+  };
+
   // Fetch product data
-  const { data: response, isLoading: loadingProduct } = useQuery(
+ const { data: response, isLoading: loadingProduct } = useQuery(
     ["get-product", id],
     () => userRequest({
       url: `/product/get-product/${id}`,
@@ -352,13 +388,20 @@ const EditProductForm = () => {
         }
       }
 
+      // Check if we have species data to use the formatted gemstone properties
+      const species = attributeData.species || productData.species;
+      let gemstoneProps = null;
+      
+     if (species) {
+        setSelectedSpecies(species);
+      }
+
       setFormData(prev => ({
         ...prev,
         ...productData,
         ...attributeData,
         unit_price: unitPrice,
         quantity: productData.quantity?.toString() || "1",
-        // unit_price: unitPrice ||"",
         actual_price: productData.actual_price?.toString() || "0",
         sale_price: productData.sale_price?.toString() || "0",
         weight_gms: attributeData.weight_gms?.toString() || productData.weight_gms?.toString() || "0",
@@ -367,6 +410,10 @@ const EditProductForm = () => {
         length: attributeData.length?.toString() || "0",
         width: attributeData.width?.toString() || "0",
         height: attributeData.height?.toString() || "0",
+        // Use gemstone property formatting if available from constants
+        ref_index: gemstoneProps?.refIndex || attributeData.ref_index?.toString() || productData.ref_index?.toString() || "",
+        sp_gravity: gemstoneProps?.specGravity || attributeData.sp_gravity?.toString() || productData.sp_gravity?.toString() || "",
+        hardness: gemstoneProps?.hardness || attributeData.hardness?.toString() || productData.hardness?.toString() || "",
         base_img_url: productData.base_img_url,
         sec_img1_url: productData.sec_img1_url,
         sec_img2_url: productData.sec_img2_url,
@@ -475,19 +522,29 @@ const EditProductForm = () => {
 
   // Convert form data from strings to appropriate types for API submission
   const prepareFormDataForSubmission = () => {
-    // Create a new object with the same structure as formData but with numeric values converted
-    const processedData = { ...formData };
+    // Create a new object with the same structure as formData
+    const processedData = { ...formData } as any;
 
+    // For these specific gemstone property fields, we want to keep the formatted string values
+    // exactly as they appear in the formData, NOT convert them to numbers
+    const gemstoneFormattedFields = ['ref_index', 'hardness', 'sp_gravity'];
+    
     // Fields to convert from string to float
     const floatFields = [
       'unit_price', 'actual_price', 'sale_price',
       'weight_gms', 'weight_carat', 'weight_ratti',
-      'length', 'width', 'height', 'ref_index', 'hardness', 'sp_gravity'
+      'length', 'width', 'height'
     ];
 
     // Convert string fields to numbers for API submission
     floatFields.forEach(field => {
       processedData[field] = processedData[field] ? parseFloat(processedData[field]) : 0;
+    });
+
+    // Ensure gemstone formatted fields stay as strings
+    gemstoneFormattedFields.forEach(field => {
+      // Keep the formatted string values as they are - important!
+      processedData[field] = formData[field];
     });
 
     // Convert quantity to integer
@@ -496,7 +553,8 @@ const EditProductForm = () => {
     return processedData;
   };
 
-  const updateProductMutation = useMutation({
+
+   const updateProductMutation = useMutation({
     mutationFn: async (formDataToSend: FormData) => {
       if (!token) throw new Error('Authentication token is missing');
 
@@ -528,7 +586,7 @@ const EditProductForm = () => {
     }
   });
 
-  const handleInputChange = (
+ const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
@@ -538,7 +596,7 @@ const EditProductForm = () => {
     }));
   };
 
-  const handleFileChange = (
+ const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     fieldName: ImageFieldName
   ) => {
@@ -597,7 +655,8 @@ const EditProductForm = () => {
     }));
   };
 
-  const validateForm = () => {
+
+ const validateForm = () => {
     if (!formData.name) {
       toast.error("Product name is required");
       return false;
@@ -609,7 +668,7 @@ const EditProductForm = () => {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm() || !validateDimensions()) return;
 
@@ -622,6 +681,13 @@ const EditProductForm = () => {
 
       const formDataToSend = new FormData();
       const processedData = prepareFormDataForSubmission();
+      
+      // Log the important gemstone properties before submitting
+      console.log("Sending gemstone properties:", {
+        ref_index: processedData.ref_index,
+        sp_gravity: processedData.sp_gravity,
+        hardness: processedData.hardness
+      });
 
       const sanitizedFormData = {
         ...processedData,
@@ -699,7 +765,7 @@ const EditProductForm = () => {
     }
   };
 
-  const renderFileInput = (
+ const renderFileInput = (
     fieldName: ImageFieldName,
     label: string
   ) => {
@@ -1013,12 +1079,31 @@ const EditProductForm = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="speciesSelect">Gemstone Species</Label>
+                  <Select
+                    value={selectedSpecies}
+                    onValueChange={handleSpeciesSelectChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gemstone species" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(gemstoneProperties).map(gemstone => (
+                        <SelectItem key={gemstone} value={gemstone}>
+                          {gemstone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="species">Species</Label>
                   <Input
                     id="species"
                     name="species"
                     value={formData.species}
-                    onChange={handleInputChange}
+                    onChange={handleSpeciesInputChange}
                   />
                 </div>
 

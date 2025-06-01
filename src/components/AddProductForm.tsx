@@ -19,8 +19,10 @@ import { useSelector } from "react-redux";
 import { X } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import html2canvas from 'html2canvas';
+import { gemstoneProperties } from "@/utils/constants";
 
 type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'product_vid' | 'product_vid2' | 'product_gif';
+
 
 interface ProductFormData {
   [key: string]: any;
@@ -177,6 +179,7 @@ const AddProductForm = () => {
     shape_cut: "",
   });
 
+  const [selectedSpecies, setSelectedSpecies] = useState("");
   const [dimensionString, setDimensionString] = useState("");
   const [isGemstone, setIsGemstone] = useState(false);
 
@@ -188,6 +191,35 @@ const AddProductForm = () => {
       quantity: value === 'gemstones' ? "1" : prev.quantity
     }));
   };
+
+  const handleSpeciesInputChange = (e: any) => {
+    const { value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      species: value
+    }));
+  };
+
+
+const handleSpeciesSelectChange = (value: any) => {
+  if (!value) return;
+
+  const selectedGemstone = gemstoneProperties[value] || {};
+
+  setSelectedSpecies(value); // Add this line to update the selectedSpecies state
+  setFormData(prev => ({
+    ...prev,
+    species: value,
+    ref_index: selectedGemstone.refIndex || "",
+    sp_gravity: selectedGemstone.specGravity || "",
+    hardness: selectedGemstone.hardness || "",
+    // Lock these fields to prevent manual editing
+    isRefIndexLocked: true,
+    isSpecGravityLocked: true,
+    isHardnessLocked: true
+  }));
+};
+
 
   function extractDimensions(input: string) {
     if (!input) return null;
@@ -257,23 +289,44 @@ const AddProductForm = () => {
 
   // Convert form data from strings to appropriate types for API submission
   const prepareFormDataForSubmission = () => {
-    // Create a new object with the same structure as formData but with numeric values converted
-    const processedData = { ...formData };
+    // Create a new object with the same structure as formData
+    const processedData = { ...formData } as any;
+
+    // Fields that should remain as strings (gemstone properties)
+    const stringFields = [
+      'ref_index',
+      'hardness',
+      'sp_gravity',
+      'certificate_no'
+    ];
 
     // Fields to convert from string to float
     const floatFields = [
       'unit_price', 'actual_price', 'sale_price',
       'weight_gms', 'weight_carat', 'weight_ratti',
-      'length', 'width', 'height', 'ref_index', 'hardness', 'sp_gravity'
+      'length', 'width', 'height'
     ];
 
-    // Convert string fields to numbers for API submission
+    // Convert numeric fields
     floatFields.forEach(field => {
-      processedData[field] = processedData[field] ? parseFloat(processedData[field]) : 0;
+      if (processedData[field]) {
+        processedData[field] = typeof processedData[field] === 'string'
+          ? parseFloat(processedData[field])
+          : processedData[field];
+      } else {
+        processedData[field] = 0;
+      }
+    });
+
+    // Ensure string fields remain as strings
+    stringFields.forEach(field => {
+      processedData[field] = String(processedData[field] || '');
     });
 
     // Convert quantity to integer
-    processedData.quantity = processedData.quantity ? parseInt(processedData.quantity, 10) : 1;
+    processedData.quantity = processedData.quantity
+      ? parseInt(String(processedData.quantity), 10)
+      : 1;
 
     return processedData;
   };
@@ -879,6 +932,27 @@ const AddProductForm = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="speciesSelect">Gemstone Species</Label>
+                <Select
+                  value={selectedSpecies}
+                  onValueChange={handleSpeciesSelectChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select gemstone species" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(gemstoneProperties).map(gemstone => (
+                      <SelectItem key={gemstone} value={gemstone}>
+                        {gemstone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+
+
+              <div className="space-y-2">
                 <Label htmlFor="dimensions">Dimensions (L x W x H in mm)</Label>
                 <Input
                   id="dimensions"
@@ -901,16 +975,8 @@ const AddProductForm = () => {
                   name="ref_index"
                   value={formData.ref_index}
                   onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hardness">Hardness</Label>
-                <Input
-                  id="hardness"
-                  name="hardness"
-                  value={formData.hardness}
-                  onChange={handleInputChange}
+                  readOnly={formData.isRefIndexLocked}
+                  className={formData.isRefIndexLocked ? "bg-gray-100" : ""}
                 />
               </div>
 
@@ -921,6 +987,20 @@ const AddProductForm = () => {
                   name="sp_gravity"
                   value={formData.sp_gravity}
                   onChange={handleInputChange}
+                  readOnly={formData.isSpecGravityLocked}
+                  className={formData.isSpecGravityLocked ? "bg-gray-100" : ""}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="hardness">Hardness</Label>
+                <Input
+                  id="hardness"
+                  name="hardness"
+                  value={formData.hardness}
+                  onChange={handleInputChange}
+                  readOnly={formData.isHardnessLocked}
+                  className={formData.isHardnessLocked ? "bg-gray-100" : ""}
                 />
               </div>
 
@@ -970,8 +1050,14 @@ const AddProductForm = () => {
                   id="species"
                   name="species"
                   value={formData.species}
-                  onChange={handleInputChange}
+                  onChange={handleSpeciesInputChange}
+                  placeholder="Enter or edit species name"
                 />
+                {selectedSpecies && formData.species !== selectedSpecies && (
+                  <p className="text-xs text-amber-600">
+                    Modified from selection: {selectedSpecies}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -1144,7 +1230,7 @@ const AddProductForm = () => {
                   name="sale_price"
                   type="text"
                   value={formData.sale_price}
-                  onChange={(e) => handleNumericInputChange(e, 'sale_price')}  
+                  onChange={(e) => handleNumericInputChange(e, 'sale_price')}
                 />
               </div>
 
