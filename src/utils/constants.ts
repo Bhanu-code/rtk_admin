@@ -65,7 +65,17 @@ export const tabs = [
     }
 ]
 
-export const gemstoneProperties = {
+interface GemstoneProperty {
+  refIndex: string;
+  specGravity: string;
+  hardness: string;
+}
+
+type GemstoneProperties = {
+  [key: string]: GemstoneProperty;
+};
+
+export const gemstoneProperties: GemstoneProperties = {
   "Hermatite": {
     refIndex: "2.940-3.220",
     specGravity: "5.20;+0.08,-0.25",

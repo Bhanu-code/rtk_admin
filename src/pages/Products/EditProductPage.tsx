@@ -25,6 +25,16 @@ import html2canvas from 'html2canvas';
 
 type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'sec_img3' | 'product_vid' | 'product_vid2' | 'product_gif';
 
+interface GemstoneProperty {
+  refIndex: string;
+  specGravity: string;
+  hardness: string;
+}
+
+// type GemstoneProperties = {
+//   [key: string]: GemstoneProperty;
+// };
+
 interface ProductFormData {
   [key: string]: any;
   base_img: File | null;
@@ -208,23 +218,23 @@ const EditProductForm = () => {
     return value === "" || /^[0-9]*\.?[0-9]*$/.test(value);
   };
 
-  const handleSpeciesSelectChange = (value: string) => {
-    if (!value) return;
+const handleSpeciesSelectChange = (value: string) => {
+  if (!value) return;
 
-    const selectedGemstone = gemstoneProperties[value] || {};
-    
-    setSelectedSpecies(value);
-    setFormData(prev => ({
-      ...prev,
-      species: value,
-      ref_index: selectedGemstone.refIndex || prev.ref_index,
-      sp_gravity: selectedGemstone.specGravity || prev.sp_gravity,
-      hardness: selectedGemstone.hardness || prev.hardness,
-      isRefIndexLocked: true,
-      isSpecGravityLocked: true,
-      isHardnessLocked: true
-    }));
-  };
+  const selectedGemstone = gemstoneProperties[value as keyof typeof gemstoneProperties] || {};
+  
+  setSelectedSpecies(value);
+  setFormData(prev => ({
+    ...prev,
+    species: value,
+    ref_index: selectedGemstone.refIndex || prev.ref_index,
+    sp_gravity: selectedGemstone.specGravity || prev.sp_gravity,
+    hardness: selectedGemstone.hardness || prev.hardness,
+    isRefIndexLocked: true,
+    isSpecGravityLocked: true,
+    isHardnessLocked: true
+  }));
+};
 
     const handleSpeciesInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -354,9 +364,9 @@ const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
 
-   const getGemstonePropertiesFromSpecies = (species:any) => {
-    return gemstoneProperties[species] || null;
-  };
+  //  const getGemstonePropertiesFromSpecies = (species:any) => {
+  //   return gemstoneProperties[species] || null;
+  // };
 
   // Fetch product data
  const { data: response, isLoading: loadingProduct } = useQuery(
@@ -390,7 +400,11 @@ const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 
       // Check if we have species data to use the formatted gemstone properties
       const species = attributeData.species || productData.species;
-      let gemstoneProps = null;
+      let gemstoneProps: GemstoneProperty | null = null;
+
+      if (species && gemstoneProperties[species as keyof typeof gemstoneProperties]) {
+  gemstoneProps = gemstoneProperties[species as keyof typeof gemstoneProperties];
+}
       
      if (species) {
         setSelectedSpecies(species);
