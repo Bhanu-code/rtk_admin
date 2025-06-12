@@ -290,7 +290,7 @@ const GemstoneForm = () => {
                             index
                           )
                         }
-                        placeholder="Enter Sub-Category name separated by comma's"
+                        placeholder="Enter Sub-Category name"
                         className="mt-2"
                       />
                     ))}

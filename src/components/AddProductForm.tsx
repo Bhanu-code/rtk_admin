@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CertificateGenerator } from "../components/CertificateGenerator";
+
 import {
   Select,
   SelectContent,
@@ -23,6 +24,12 @@ import { gemstoneProperties } from "@/utils/constants";
 
 type ImageFieldName = 'base_img' | 'sec_img1' | 'sec_img2' | 'product_vid' | 'product_vid2' | 'product_gif';
 
+
+interface GemstoneApiResponse {
+  name: string;
+  alternateNames?: string[] | string;
+  // Add other properties as needed
+}
 
 interface ProductFormData {
   [key: string]: any;
@@ -182,6 +189,8 @@ const AddProductForm = () => {
   const [selectedSpecies, setSelectedSpecies] = useState("");
   const [dimensionString, setDimensionString] = useState("");
   const [isGemstone, setIsGemstone] = useState(false);
+  const [gemstoneOptions, setGemstoneOptions] = useState<{ name: string, alternateNames: string[] }[]>([]);
+  const [isLoadingGemstones, setIsLoadingGemstones] = useState(true);
 
   const handleCategoryChange = (value: string) => {
     setIsGemstone(value === 'gemstones');
@@ -192,7 +201,118 @@ const AddProductForm = () => {
     }));
   };
 
-  const handleSpeciesInputChange = (e: any) => {
+
+
+  useEffect(() => {
+    const fetchGemstones = async () => {
+      setIsLoadingGemstones(true);
+      try {
+        const response = await userRequest({
+          url: "/gemstones/get-all-gemblog",
+          method: "GET",
+        });
+
+        if (!response.data || !Array.isArray(response.data)) {
+          throw new Error('Invalid response format from server');
+        }
+
+        const gemstones = response.data
+          .filter((gem: GemstoneApiResponse) => gem.name && !gem.name.toLowerCase().includes('demo'))
+          .map((gem: GemstoneApiResponse) => {
+            let alternateNames = [];
+            try {
+              if (gem.alternateNames) {
+                alternateNames = Array.isArray(gem.alternateNames)
+                  ? gem.alternateNames
+                  : JSON.parse(gem.alternateNames);
+              }
+            } catch (e) {
+              console.error("Error parsing alternateNames", e);
+            }
+
+            return {
+              name: gem.name,
+              alternateNames: alternateNames.filter((name: string) =>
+                name && !name.toLowerCase().includes('demo'))
+            };
+          });
+        setGemstoneOptions(gemstones);
+      } catch (error) {
+        console.error("Error fetching gemstones:", error);
+        toast.error("Failed to load gemstone data");
+      } finally {
+        setIsLoadingGemstones(false);
+      }
+    };
+
+    fetchGemstones();
+  }, []);
+
+  const getAllAlternateNames = () => {
+    if (!gemstoneOptions || gemstoneOptions.length === 0) return [];
+
+    const allAlternateNames = new Set<string>();
+
+    // Only include alternate names, not the main gemstone names
+    gemstoneOptions.forEach((gem: { name: string; alternateNames: string[] }) => {
+      if (gem?.alternateNames && Array.isArray(gem.alternateNames)) {
+        gem.alternateNames.forEach(name => {
+          if (name && typeof name === 'string' && name.trim() !== '' &&
+            !name.toLowerCase().includes('demo') &&
+            !name.toLowerCase().includes('test')) {
+            allAlternateNames.add(name.trim());
+          }
+        });
+      }
+    });
+
+    return Array.from(allAlternateNames).sort();
+  };
+
+  const handleSubcategoryChange = (value: string) => {
+    if (!value) return;
+
+    // Validate the selected value exists in gemstone names
+    if (formData.category === 'gemstones' && !gemstoneNames.includes(value)) {
+      toast.error("Invalid gemstone selection");
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      subcategory: value
+    }));
+  };
+
+  const gemstoneNames = React.useMemo(() => getAllAlternateNames(), [gemstoneOptions]);
+
+  const debugGemstoneData = () => {
+    console.log("=== DEBUGGING GEMSTONE DATA ===");
+    console.log("gemstoneOptions length:", gemstoneOptions?.length);
+    console.log("gemstoneOptions:", gemstoneOptions);
+    console.log("isLoadingGemstones:", isLoadingGemstones);
+    console.log("formData.category:", formData.category);
+    console.log("getAllAlternateNames result:", getAllAlternateNames());
+    console.log("=== END DEBUG ===");
+  };
+
+  // Call this function in your component to debug:
+  useEffect(() => {
+    if (!isLoadingGemstones && gemstoneOptions.length > 0) {
+      debugGemstoneData();
+    }
+  }, [gemstoneOptions, isLoadingGemstones]);
+
+  useEffect(() => {
+    if (formData.category === 'gemstones' && gemstoneNames.length > 0 && !formData.subcategory) {
+      setFormData(prev => ({
+        ...prev,
+        subcategory: gemstoneNames[0] // Set first gemstone as default
+      }));
+    }
+  }, [formData.category, gemstoneNames]);
+
+  const handleSpeciesInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -201,24 +321,24 @@ const AddProductForm = () => {
   };
 
 
-const handleSpeciesSelectChange = (value: any) => {
-  if (!value) return;
+  const handleSpeciesSelectChange = (value: string) => {
+    if (!value) return;
 
-  const selectedGemstone = gemstoneProperties[value] || {};
+    const selectedGemstone = gemstoneProperties[value] || {};
 
-  setSelectedSpecies(value); // Add this line to update the selectedSpecies state
-  setFormData(prev => ({
-    ...prev,
-    species: value,
-    ref_index: selectedGemstone.refIndex || "",
-    sp_gravity: selectedGemstone.specGravity || "",
-    hardness: selectedGemstone.hardness || "",
-    // Lock these fields to prevent manual editing
-    isRefIndexLocked: true,
-    isSpecGravityLocked: true,
-    isHardnessLocked: true
-  }));
-};
+    setSelectedSpecies(value); // Add this line to update the selectedSpecies state
+    setFormData(prev => ({
+      ...prev,
+      species: value,
+      ref_index: selectedGemstone.refIndex || "",
+      sp_gravity: selectedGemstone.specGravity || "",
+      hardness: selectedGemstone.hardness || "",
+      // Lock these fields to prevent manual editing
+      isRefIndexLocked: true,
+      isSpecGravityLocked: true,
+      isHardnessLocked: true
+    }));
+  };
 
 
   function extractDimensions(input: string) {
@@ -640,12 +760,16 @@ const handleSpeciesSelectChange = (value: any) => {
     e.preventDefault();
     if (!validateDimensions()) return;
 
+    const toastId = toast.loading("Creating product...", {
+      position: "bottom-right"
+    });
+
     try {
       // Generate the certificate image first
       const certFile = await generateAndUploadCertificate();
 
       if (!certFile) {
-        toast.error("Failed to generate certificate image");
+        toast.error("Failed to generate certificate image", { id: toastId });
         return;
       }
 
@@ -658,25 +782,20 @@ const handleSpeciesSelectChange = (value: any) => {
         if (key !== 'base_img' && key !== 'sec_img1' && key !== 'sec_img2' &&
           key !== 'sec_img3' && key !== 'product_vid' && key !== 'product_vid2' &&
           key !== 'product_gif') {
-          formDataToSend.append(key, String(processedData[key])); // Convert any numbers back to strings for FormData
+          formDataToSend.append(key, String(processedData[key]));
         }
       });
 
-      // Append files - IMPORTANT: Use the same field names as backend expects
+      // Append files
       if (processedData.base_img) formDataToSend.append('base_img', processedData.base_img);
       if (processedData.sec_img1) formDataToSend.append('sec_img1', processedData.sec_img1);
       if (processedData.sec_img2) formDataToSend.append('sec_img2', processedData.sec_img2);
-      if (certFile) formDataToSend.append('sec_img3', certFile); // Certificate as sec_img3
+      if (certFile) formDataToSend.append('sec_img3', certFile);
       if (processedData.product_vid) formDataToSend.append('product_video', processedData.product_vid);
       if (processedData.product_vid2) formDataToSend.append('product_video2', processedData.product_vid2);
       if (processedData.product_gif) formDataToSend.append('product_gif', processedData.product_gif);
 
-      // Debug: Log all FormData entries
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(`FormData Entry: ${key}`, value);
-      }
-
-      // Make the API call without assigning to a variable since we're not using the response
+      // Make the API call
       await userRequest({
         url: "/product/create-product",
         method: "POST",
@@ -688,14 +807,28 @@ const handleSpeciesSelectChange = (value: any) => {
       });
 
       // Handle success
-      toast.success("Product created successfully!");
+      toast.success("Product created successfully!", {
+        id: toastId,
+        position: "bottom-right",
+        duration: 2000
+      });
       // Reset form...
 
     } catch (error) {
       console.error("Error submitting form:", error);
-      toast.error((error as Error).message || "Failed to update product");
+      toast.error((error as Error).message || "Failed to create product", {
+        id: toastId,
+        position: "bottom-right",
+        duration: 2000
+      });
     }
   };
+
+  console.log('Rendering Select with options:', getAllAlternateNames());
+
+  useEffect(() => {
+    console.log('gemstoneOptions updated:', gemstoneOptions);
+  }, [gemstoneOptions]);
 
   const renderFileInput = (
     fieldName: ImageFieldName,
@@ -809,15 +942,36 @@ const handleSpeciesSelectChange = (value: any) => {
               </div>
             </div>
 
+
+            {/* <div className="mt-2 p-2 bg-gray-100 rounded">
+              <p className="text-sm">Debug Info:</p>
+              <p className="text-xs">Category: {formData.category}</p>
+              <p className="text-xs">Subcategory: {formData.subcategory}</p>
+              <p className="text-xs">Gemstone Names: {gemstoneNames.join(', ')}</p>
+            </div> */}
+
+
             <div className="space-y-2">
               <Label htmlFor="subcategory">Sub-Category</Label>
-              <Input
-                id="subcategory"
-                name="subcategory"
+
+              <Select
                 value={formData.subcategory}
-                onChange={handleInputChange}
-                placeholder="Enter sub-category"
-              />
+                onValueChange={handleSubcategoryChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gemstone type">
+                    {formData.subcategory || "Select gemstone type"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  {gemstoneNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
             </div>
 
             <div className="space-y-2">
@@ -1253,8 +1407,16 @@ const handleSpeciesSelectChange = (value: any) => {
             className="w-full"
             disabled={createProductMutation.isLoading}
           >
-            {createProductMutation.isLoading ? "Creating..." : "Create Product"}
+            {createProductMutation.isLoading ? (
+              <div className="flex items-center gap-2">
+                <ClipLoader color="#ffffff" size={20} />
+                Creating Product...
+              </div>
+            ) : (
+              "Create Product"
+            )}
           </Button>
+
         </form>
       </CardContent>
     </Card>

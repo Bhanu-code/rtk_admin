@@ -1,26 +1,33 @@
-# Use an official Node runtime as the base image
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine as builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
+# Copy package files
 COPY package*.json ./
 
-# Install project dependencies
-RUN npm install
+# Install all dependencies (including devDependencies)
+RUN npm ci
 
-# Copy the rest of the application code
+# Copy source code
 COPY . .
 
-# Build the app
+# Build the application
 RUN npm run build
 
-# Use a lightweight server to serve static content
+# Production stage
+FROM node:20-alpine as production
+
+WORKDIR /app
+
+# Install serve globally
 RUN npm install -g serve
 
-# Expose the port the app runs on
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Expose port
 EXPOSE 3000
 
-# Command to run the application
+# Start the application
 CMD ["serve", "-s", "dist", "-l", "3000"]
