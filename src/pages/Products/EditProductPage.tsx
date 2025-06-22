@@ -1051,7 +1051,7 @@ const EditProductForm = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sale_price">Sale Price</Label>
-                  <Input id="sale_price" name="sale_price" type="text" value={formData.sale_price} onChange={(e) => handleNumericInputChange(e, 'sale_price')} />
+                  <Input id="sale_price" name="sale_price" type="text" value={formData.sale_price} onChange={handleInputChange} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity</Label>
@@ -1060,7 +1060,7 @@ const EditProductForm = () => {
                     name="quantity"
                     type="text"
                     value={formData.quantity}
-                    onChange={(e) => handleNumericInputChange(e, 'quantity')}
+                    onChange={handleInputChange}
                     disabled={isGemstone}
                   />
                 </div>
