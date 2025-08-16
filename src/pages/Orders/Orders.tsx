@@ -10,8 +10,30 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { userRequest } from "@/utils/requestMethods";
+import { useQuery } from "react-query";
+import { useNavigate } from "react-router-dom";
 
 const Orders = () => {
+  const getAllOrders = () => {
+    return userRequest({
+      url: `/order/get-all-orders/`,
+      method: "get",
+      
+    });
+  };
+
+  const { data: allOrders, isLoading: loadingOrders } = useQuery("get-all-orders", getAllOrders, {
+    onSuccess: () => {
+      console.log(allOrders);
+    },
+    onError: (error: any) => {
+      console.log(error);
+    },
+  });
+
+  const navigateTo = useNavigate();
+
   // Sample orders data - in a real application, this would come from your backend
   const initialOrders = [
     {
@@ -213,7 +235,7 @@ const Orders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {orders.map((order: any) => (
+                {allOrders?.data?.map((order: any) => (
                   <tr
                     key={order.id}
                     className="hover:bg-gray-50 cursor-pointer"
@@ -222,49 +244,46 @@ const Orders = () => {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4 text-gray-400" />
-                        {order.id}
+                        {order?.id}
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div>
-                        <p className="font-medium">{order.customer}</p>
-                        <p className="text-sm text-gray-500">{order.email}</p>
+                        <p className="font-medium">{order?.userId}</p>
+                        <p className="text-sm text-gray-500">{order?.payment_method}</p>
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div>
-                        <p>{new Date(order.date).toLocaleDateString()}</p>
-                        <p className="text-sm text-gray-500">
-                          {order.shipping}
-                        </p>
+                        <p>{new Date(order?.created_at).toLocaleDateString()}</p>
+                       
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div>
-                        <p className="font-medium">${order.total.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">
-                          {order.items} items
-                        </p>
+                        <p className="font-medium whitespace-nowrap">Rs. {order?.total_price?.toFixed(2)}</p>
+                        
                       </div>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex justify-center">
                         <span
                           className={`px-3 py-1 rounded-full text-sm ${getStatusStyle(
-                            order.status
+                            order?.status
                           )}`}
                         >
                           <div className="flex items-center gap-2">
-                            <StatusIcon status={order.status} />
-                            {order.status}
+                            <StatusIcon status={order?.status} />
+                            {order?.status}
                           </div>
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <button className="p-2 hover:bg-gray-100 rounded-full">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
+                      <button onClick={()=>{
+                        navigateTo(`/home/orders/${order?.id}`)
+                      }} className="px-2 py-1 border border-blue-200 rounded-md">Details</button>
+                      
                     </td>
                   </tr>
                 ))}
