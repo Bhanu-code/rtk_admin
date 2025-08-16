@@ -7,8 +7,13 @@ import {
  CreditCard, CheckCircle, AlertCircle,
   Printer, ArrowLeft, Send
 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { userRequest } from '@/utils/requestMethods';
+import { useQuery } from 'react-query';
 
 const OrderDetails = () => {
+  const [products, setproducts] = useState([])
+
   // Sample order data - would come from your backend in a real app
   const [order, setOrder] = useState({
     id: '#12345',
@@ -84,6 +89,29 @@ const OrderDetails = () => {
     }
   };
 
+  const { orderId } = useParams();
+
+  const getOrderDetails = () => {
+      return userRequest({
+        url: `/order/get-order/${orderId}`,
+        method: "get",
+        
+      });
+    };
+  
+    const { data: orderDetails, isLoading: loadingDetails } = useQuery("get-order-details", getOrderDetails, {
+      onSuccess: () => {
+        console.log(orderDetails);
+        setproducts(JSON.parse(orderDetails?.data?.orderDetails?.productDetails));
+        console.log(products)
+   
+      },
+      onError: (error: any) => {
+        console.log(error);
+      },
+    });
+  
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -93,9 +121,9 @@ const OrderDetails = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Order {order.id}</h1>
+            <h1 className="text-2xl font-bold">Order: {orderDetails?.data?.orderDetails?.id}</h1>
             <p className="text-gray-500">
-              Placed on {new Date(order.date).toLocaleString()}
+              Placed on {new Date(orderDetails?.data?.orderDetails?.created_at).toLocaleString()}
             </p>
           </div>
         </div>
@@ -123,9 +151,9 @@ const OrderDetails = () => {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-medium">Order Status</h2>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm mt-2 ${getStatusColor(order.status)}`}>
-                    {order.status === 'Processing' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                    {order.status}
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm mt-2 ${getStatusColor(orderDetails?.data?.orderDetails?.status)}`}>
+                    {orderDetails?.data?.orderDetails?.status === 'Pending' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                    {orderDetails?.data?.orderDetails?.status}
                   </span>
                 </div>
                 <div className="text-right">
@@ -163,19 +191,19 @@ const OrderDetails = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-4 border-b last:border-0">
+                {products.map((item:any) => (
+                  <div key={item?.id} className="flex items-center justify-between py-4 border-b last:border-0">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-gray-100 rounded"></div>
                       <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-gray-500">SKU: {item.sku}</p>
-                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                        <h3 className="font-medium">{item?.product_name}</h3>
+                        <p className="text-sm text-gray-500">SKU: {item?.sku}</p>
+                        <p className="text-sm text-gray-500">Qty: 1</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${item.subtotal.toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                      <p className="font-medium">Product Price - Rs.{item?.product_total?.toFixed(2)}</p>
+                      <p className="text-sm text-gray-500">Product Total - Rs. {item?.product_price?.toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -189,11 +217,11 @@ const OrderDetails = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Shipping</span>
-                      <span>${order.shippingCost.toFixed(2)}</span>
+                      <span>0</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Tax</span>
-                      <span>${order.tax.toFixed(2)}</span>
+                      <span>0</span>
                     </div>
                     <div className="flex justify-between font-medium text-lg pt-2 border-t">
                       <span>Total</span>
@@ -216,14 +244,16 @@ const OrderDetails = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium">{order.customer.name}</h3>
+                  <h3 className="font-medium">{orderDetails?.data?.customerDetails?.firstname} 
+                    {" "} {orderDetails?.data?.customerDetails?.lastname} 
+                  </h3>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                     <Mail className="h-4 w-4" />
-                    {order.customer.email}
+                    {orderDetails?.data?.customerDetails?.email}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                     <Phone className="h-4 w-4" />
-                    {order.customer.phone}
+                    {orderDetails?.data?.customerDetails?.telephone}
                   </div>
                 </div>
               </div>

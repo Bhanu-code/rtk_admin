@@ -28,6 +28,7 @@ import Appointments from "./pages/Astrology/Appointments";
 import NavbarOffer from "./pages/NavbarOffer/NavbarOffer";
 import Banner from "./pages/Banner/Banner";
 import PoojaMetalOptions from './pages/Pooja_and_Metal/PoojaMetalOptions'
+import OrderDetails from "./pages/Orders/OrderDetails";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
@@ -85,6 +86,10 @@ function App() {
         {
           path: "/home/orders",
           element: <Orders />,
+        },
+        {
+          path: "/home/orders/:orderId",
+          element: <OrderDetails />,
         },
         {
           path: "/home/customers",
