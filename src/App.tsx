@@ -33,8 +33,8 @@ import OrderDetails from "./pages/Orders/OrderDetails";
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
 function App() {
-  const userType = useSelector((state:any) => state.user.userType);
-  // const userType = "admin"
+  // const userType = useSelector((state:any) => state.user.userType);
+  const userType = "admin"
 
 
   const [theme, setTheme] = useState("light");
@@ -58,7 +58,7 @@ function App() {
             <Navbar />
           </div>
           <div className="flex flex-1 ">
-            <div style={{ width:"12rem" }} className="sidebar h-screen shadow-md overflow-auto">
+            <div className="sidebar w-1/10 h-screen shadow-md overflow-auto">
               <Sidebar />
             </div>
             <div className="flex-1 h-screen overflow-auto">

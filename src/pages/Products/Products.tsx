@@ -1,289 +1,239 @@
 import { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
-  Search, Filter, Plus, MoreVertical, 
-   Tag, Package, AlertCircle, ArrowUpDown,
-  View
+  Search, Filter, Plus, MoreVertical,
+  Tag, Package, AlertCircle, ArrowUpDown,
+  Eye, TrendingDown, ShoppingBag, ChevronDown,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { userRequest } from '@/utils/requestMethods';
 import { useQuery } from 'react-query';
-// import { AnyAaaaRecord } from 'node:dns';
+import AddProductModal from '@/components/AddProductModal';
 
 const Products = () => {
-  // Sample products data - would come from your backend in a real app
-  const initialProducts = [
-    {
-      id: 1,
-      name: 'Wireless Earbuds',
-      sku: 'WE-001',
-      category: 'Electronics',
-      price: 79.99,
-      stock: 45,
-      status: 'Active',
-      image: '/api/placeholder/80/80'
-    },
-    {
-      id: 2,
-      name: 'Phone Case',
-      sku: 'PC-002',
-      category: 'Accessories',
-      price: 50.00,
-      stock: 8,
-      status: 'Low Stock',
-      image: '/api/placeholder/80/80'
-    },
-    {
-      id: 3,
-      name: 'Smart Watch',
-      sku: 'SW-003',
-      category: 'Electronics',
-      price: 239.99,
-      stock: 0,
-      status: 'Out of Stock',
-      image: '/api/placeholder/80/80'
-    },
-    {
-      id: 4,
-      name: 'Bluetooth Speaker',
-      sku: 'BS-004',
-      category: 'Electronics',
-      price: 189.99,
-      stock: 23,
-      status: 'Active',
-      image: '/api/placeholder/80/80'
-    }
-  ];
-
-  const [products] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
-  // const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const categories = ['All', 'Electronics', 'Accessories', 'Clothing', 'Books'];
-  const statuses = ['All', 'Active', 'Low Stock', 'Out of Stock'];
+  const categories = ['All', 'Gemstones', 'Jewelry']; // Updated to match your actual categories
+  const statuses = ['All', 'Draft', 'Feature', 'Public'];
 
-  // Filter products based on search term, category, and status
-  // const filteredProducts = products.filter(product => {
-  //   const matchesSearch = (
-  //     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  //   );
-  //   const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter;
-  //   const matchesStatus = statusFilter === 'All' || product.status === statusFilter;
-  //   return matchesSearch && matchesCategory && matchesStatus;
-  // });
+  const { data: AllProducts, isLoading } = useQuery(
+    "get-all-products",
+    () => userRequest({ url: `/product`, method: "get" }),
+    { 
+      onError: (e: any) => console.error("Failed to fetch products:", e),
+      staleTime: 1000 * 60 * 5, // 5 minutes cache (signed URLs are valid for 7 days)
+    }
+  );
 
-  const getStatusColor = (status:any) => {
+  const products = AllProducts?.data ?? [];
+
+  const totalProducts = products.length;
+  const lowStock = products.filter((p: any) => p.quantity > 0 && p.quantity <= 10).length;
+  const outOfStock = products.filter((p: any) => p.quantity === 0).length;
+
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 0:
-        return 'bg-green-100 text-green-800';
-      case 1:
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Out of Stock':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'Public':  return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      case 'Feature': return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+      case 'Draft':   return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      default:        return 'bg-slate-500/10 text-slate-400 border border-slate-500/20';
     }
   };
 
-  const getAllProductsMethod = () => {
-      return userRequest({
-        url: `/product/get-all-products/`,
-        method: "get",
-      });
-    };
-  
-    const { data: AllProducts } = useQuery("get-all-products", getAllProductsMethod, {
-      onSuccess: () => {
-        console.log(AllProducts);
-      },
-      onError: (error: any) => {
-        console.log(error);
-      },
-    });
-  
+  const getStockBadge = (qty: number) => {
+    if (qty === 0)  return 'bg-red-500/10 text-red-400 border border-red-500/20';
+    if (qty <= 10)  return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  };
 
+  const filteredProducts = products.filter((p: any) => {
+    const matchesSearch = 
+      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
+    const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen mb-10">
+    <div className="p-6 space-y-6 bg-slate-950 min-h-screen">
+
+      {showAddModal && <AddProductModal onClose={() => setShowAddModal(false)} />}
+
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <Link to="/home/products/add">
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
-        </Link>
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Products</h1>
+          <p className="text-sm text-slate-500 mt-1">{totalProducts} total products</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-all duration-200 shadow-lg shadow-indigo-500/30"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Product
+        </button>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search products by name or SKU..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-4">
-              <select
-                className="px-4 py-2 border rounded-md"
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-              <select
-                className="px-4 py-2 border rounded-md"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                {statuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                More Filters
-              </Button>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { 
+            label: 'Total Products', 
+            value: totalProducts, 
+            icon: ShoppingBag, 
+            iconBg: 'bg-indigo-500/10', 
+            iconColor: 'text-indigo-400' 
+          },
+          { 
+            label: 'Low Stock',      
+            value: lowStock,      
+            icon: TrendingDown, 
+            iconBg: 'bg-amber-500/10',  
+            iconColor: 'text-amber-400'  
+          },
+          { 
+            label: 'Out of Stock',   
+            value: outOfStock,    
+            icon: AlertCircle,  
+            iconBg: 'bg-red-500/10',    
+            iconColor: 'text-red-400'    
+          },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-slate-900 border border-white/5 rounded-2xl p-6 flex items-center justify-between hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${stat.iconBg}`}>
+                <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">{stat.label}</p>
+                <p className="text-3xl font-semibold text-white mt-1">{stat.value}</p>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-       {/* Quick Stats */}
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Package className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Total Products</p>
-                  <p className="text-2xl font-bold">{products.length}</p>
-                </div>
-              </div>
-              <ArrowUpDown className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-yellow-100 rounded-full">
-                  <AlertCircle className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Low Stock Items</p>
-                  <p className="text-2xl font-bold">
-                    {products.filter(p => p.status === 'Low Stock').length}
-                  </p>
-                </div>
-              </div>
-              <ArrowUpDown className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-red-100 rounded-full">
-                  <Package className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Out of Stock</p>
-                  <p className="text-2xl font-bold">
-                    {products.filter(p => p.status === 'Out of Stock').length}
-                  </p>
-                </div>
-              </div>
-              <ArrowUpDown className="h-4 w-4 text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {AllProducts?.data?.map((product:any) => (
-          <Card key={product?.sku} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                <img
-                  src={product?.base_img_url}
-                  alt={product?.name}
-                  className="w-20 h-20 rounded object-cover"
-                />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{product?.name}</h3>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500">SKU: {product?.sku}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">{product?.category}</span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">{product?.subcategory}</span>
-                  </div>
-                  <div className="mt-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${getStatusColor(product?.quality)}`}>
-                      {product?.quantity === 0 && <AlertCircle className="h-3 w-3" />}
-                      {product?.quantity}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <p className={`font-medium text-white rounded-md px-2 py-0 ${product?.status === `Draft` && `bg-yellow-500`} ${product?.status === `Feature` && `bg-blue-500`} ${product?.status === `Public` && `bg-green-400`}`}>{product?.status}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p className={`font-medium ${product?.sale_price>0 && `line-through`}`}>Rs. {product?.actual_price}</p>
-                  { product?.sale_price >0 && <p className="font-medium">Rs. {product?.sale_price}</p> }
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Stock</p>
-                  <p className="font-medium">{product?.quantity} units</p>
-                </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Link to={`/home/products/view/${product?.id}`}>
-                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
-                  <View className="h-4 w-4" />
-                  View
-                </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         ))}
       </div>
 
-     
+      {/* Filters */}
+      <div className="bg-slate-900 border border-white/5 rounded-2xl p-5">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Input
+              placeholder="Search by product name or SKU..."
+              className="pl-11 bg-slate-950 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-3">
+            {[
+              { value: categoryFilter, setter: setCategoryFilter, options: categories, label: "Category" },
+              { value: statusFilter,   setter: setStatusFilter,   options: statuses,   label: "Status" }
+            ].map((filter, index) => (
+              <div key={index} className="relative min-w-[140px]">
+                <select
+                  className="w-full appearance-none bg-slate-950 border border-white/10 text-slate-300 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  value={filter.value}
+                  onChange={(e) => filter.setter(e.target.value)}
+                >
+                  {filter.options.map((option) => (
+                    <option key={option} value={option} className="bg-slate-900">
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      {filteredProducts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Package className="h-16 w-16 text-slate-600 mb-4" />
+          <p className="text-xl text-slate-400 font-medium">No products found</p>
+          <p className="text-slate-500 mt-2">Try changing your search or filter criteria</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredProducts.map((product: any) => (
+            <div
+              key={product.id || product.sku}
+              className="group bg-slate-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/40"
+            >
+              <div className="relative aspect-[16/13] bg-slate-950 overflow-hidden">
+                <img
+                  src={product.base_img_url || '/placeholder-image.png'}
+                  alt={product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                  }}
+                />
+
+                <div className="absolute top-3 left-3">
+                  <span className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${getStatusBadge(product.status)}`}>
+                    {product.status || 'Draft'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div>
+                  <h3 className="font-medium text-white line-clamp-2 leading-tight">{product.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <Tag className="h-3.5 w-3.5" />
+                  {product.category} {product.subcategory && `• ${product.subcategory}`}
+                </div>
+
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-semibold text-white">
+                    ₹{product.sale_price || product.actual_price}
+                  </span>
+                  {product.sale_price && product.actual_price && product.sale_price < product.actual_price && (
+                    <span className="text-sm text-slate-500 line-through">
+                      ₹{product.actual_price}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                  <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStockBadge(product.quantity)}`}>
+                    {product.quantity === 0 ? 'Out of Stock' : `${product.quantity} in stock`}
+                  </span>
+
+                  <Link to={`/home/products/view/${product.id}`}>
+                    <button className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

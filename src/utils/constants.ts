@@ -2,7 +2,8 @@ export const tabs = [
     {
         tab_name: "Dashboard",
         link: "/home/dashboard",
-        type: "tab"
+        type: "tab",
+        
     },
     {
         tab_name: "Orders",
