@@ -48,7 +48,7 @@ interface ProductFormData {
   variety: string; other_chars: string; certificate_no: string; shape_cut: string;
 }
 
-// ─── Shared styles — identical to AddProductModal ────────────────────────────
+// ─── Shared styles ────────────────────────────────────────────────────────────
 
 const inputCls = "w-full bg-white/5 border border-white/5 text-slate-200 placeholder:text-slate-700 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed read-only:bg-white/[0.02] read-only:text-slate-500";
 const labelCls = "text-xs font-medium text-slate-400 mb-1.5 block";
@@ -70,7 +70,7 @@ const statusStyle: Record<string, string> = {
 
 const CATEGORIES = ["Electronics", "Accessories", "Clothing", "Books", "Gemstones", "Jewelry"];
 
-// ─── FilePreview — defined outside to prevent remount ────────────────────────
+// ─── FilePreview ──────────────────────────────────────────────────────────────
 
 const FilePreview = ({
   file, existingUrl, onRemove,
@@ -113,7 +113,7 @@ const FilePreview = ({
   );
 };
 
-// ─── FileSlot — defined outside to prevent remount ───────────────────────────
+// ─── FileSlot ─────────────────────────────────────────────────────────────────
 
 const FileSlot = ({
   field, label, file, existingUrl, onChange, onRemove,
@@ -169,11 +169,11 @@ const EditProductForm = () => {
 
   const [activeTab,              setActiveTab             ] = useState("basic");
   const [selectedSpecies,        setSelectedSpecies       ] = useState("");
-  const [dimensionString,         setDimensionString       ] = useState("");
-  const [isGemstone,              setIsGemstone            ] = useState(false);
-  const [gemstoneOptions,         setGemstoneOptions       ] = useState<{ name: string; alternateNames: string[] }[]>([]);
-  const [isLoadingGemstones,      setIsLoadingGemstones    ] = useState(true);
-  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+  const [dimensionString,        setDimensionString       ] = useState("");
+  const [isGemstone,             setIsGemstone            ] = useState(false);
+  const [gemstoneOptions,        setGemstoneOptions       ] = useState<{ name: string; alternateNames: string[] }[]>([]);
+  const [isLoadingGemstones,     setIsLoadingGemstones    ] = useState(true);
+  const [isGeneratingCertificate,setIsGeneratingCertificate] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
     base_img: null, sec_img1: null, sec_img2: null, sec_img3: null,
@@ -385,14 +385,13 @@ const EditProductForm = () => {
       if (!blob) return null;
       return new File([blob], "certificate.jpg", { type: "image/jpeg", lastModified: Date.now() });
     } catch {
-      toast.error("Failed to generate certificate");
       return null;
     } finally {
       setIsGeneratingCertificate(false);
     }
   };
 
-  // ── prepareData — mirrors AddProductModal ────────────────────────────────────
+  // ── prepareData ──────────────────────────────────────────────────────────────
   const prepareData = () => {
     const d: any = { ...formData };
     ["unit_price","actual_price","sale_price","weight_gms","weight_carat","weight_ratti","length","width","height"]
@@ -403,21 +402,23 @@ const EditProductForm = () => {
     return d;
   };
 
-  // ── Update mutation ──────────────────────────────────────────────────────────
-  const updateMutation = useMutation({
-    mutationFn: async (fd: FormData) =>
+  // ── Update mutation (react-query v3 syntax) ──────────────────────────────────
+  const updateMutation = useMutation(
+    async (fd: FormData) =>
       userRequest({
         url:     `/product/${id}`,
         method:  "PUT",
         data:    fd,
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["get-product", id]);
-      queryClient.invalidateQueries("get-all-products");
-    },
-    onError: (err: any) => toast.error(err.message || "Failed to update product"),
-  });
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["get-product", id]);
+        queryClient.invalidateQueries("get-all-products");
+      },
+      onError: (err: any) => { toast.error(err.message || "Failed to update product"); },
+    }
+  );
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -429,9 +430,6 @@ const EditProductForm = () => {
 
     const toastId = toast.loading("Updating product...", { position: "bottom-right" });
     try {
-      const certFile = await generateCertificate();
-      if (!certFile) throw new Error("Certificate generation failed");
-
       const processed = prepareData();
       const fd        = new FormData();
 
@@ -465,7 +463,10 @@ const EditProductForm = () => {
         }
       }
 
-      fd.append("sec_img3", certFile);
+      const certFile = await generateCertificate();
+      if (certFile) {
+        fd.append("sec_img3", certFile);
+      }
 
       await updateMutation.mutateAsync(fd);
       toast.success("Product updated!", { id: toastId, position: "bottom-right" });
@@ -566,7 +567,6 @@ const EditProductForm = () => {
               {/* ══ BASIC INFO ══ */}
               {activeTab === "basic" && (
                 <div className="space-y-5">
-                  {/* Status pill buttons */}
                   <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
                     <span className="text-xs text-slate-500 font-medium">Status</span>
                     <div className="flex gap-2">
@@ -790,7 +790,6 @@ const EditProductForm = () => {
                         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
                       </div>
                     </div>
-                    {/* Editable species override — same pattern as AddProductModal */}
                     <div>
                       <label className={labelCls}>Species (editable)</label>
                       <input name="species" value={formData.species} onChange={handleChange} placeholder="Edit species name" className={inputCls} />
@@ -905,7 +904,6 @@ const EditProductForm = () => {
                     </div>
                   </div>
 
-                  {/* Discount summary card */}
                   {(formData.actual_price || formData.sale_price) && (
                     <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 flex items-center justify-between">
                       <div>
@@ -931,7 +929,7 @@ const EditProductForm = () => {
 
             </div>
 
-            {/* Footer: dot nav + Back / Next / Save */}
+            {/* Footer */}
             <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {TABS.map(tab => (

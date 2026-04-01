@@ -4,7 +4,7 @@ import { useMutation, useQuery } from 'react-query';
 import { useState } from 'react';
 import {
   X, Edit, DollarSign, Award, Image as ImageIcon,
-  Package, Tag, ArrowLeft, AlertCircle,
+  Package,  ArrowLeft, AlertCircle,
 } from 'lucide-react';
 import ConfirmDelete from "./ConfirmDelete";
 import { toast } from "sonner";

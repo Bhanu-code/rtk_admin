@@ -14,7 +14,7 @@ const EditGemStonePage = () => {
 
   return (
     <>
-    <EditGemstoneForm gemstoneId={id} onSuccess={onSuccess} />
+    <EditGemstoneForm gemstoneId={id as string} onSuccess={onSuccess} />
     </>
   )
 }

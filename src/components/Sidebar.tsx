@@ -75,7 +75,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-0.5 flex-1">
-        {tabs.map((item) =>
+        {tabs.map((item:any) =>
           item.type === "accordion" ? (
             <Accordion
               key={item.tab_name}

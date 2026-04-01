@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import {
-  Search, Filter, Plus, MoreVertical,
-  Tag, Package, AlertCircle, ArrowUpDown,
+  Search,  Plus, 
+  Tag, Package, AlertCircle, 
   Eye, TrendingDown, ShoppingBag, ChevronDown,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';

@@ -99,7 +99,7 @@ const OrderDetails = () => {
       });
     };
   
-    const { data: orderDetails, isLoading: loadingDetails } = useQuery("get-order-details", getOrderDetails, {
+    const { data: orderDetails, } = useQuery("get-order-details", getOrderDetails, {
       onSuccess: () => {
         console.log(orderDetails);
         setproducts(JSON.parse(orderDetails?.data?.orderDetails?.productDetails));

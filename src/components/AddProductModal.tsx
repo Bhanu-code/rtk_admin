@@ -219,6 +219,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   const [isLoadingGemstones, setIsLoadingGemstones] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  console.log(gemstoneOptions)
+
   // ── Gemstone fetch ──────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchGemstones = async () => {
@@ -258,20 +260,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
 
   // ── Build subcategory list ──────────────────────────────────────────────────
   // Uses alternateNames if available, falls back to gem.name
-  const gemstoneSubcategories = React.useMemo(() => {
-    const all = new Set<string>();
-    gemstoneOptions.forEach(gem => {
-      if (gem.alternateNames && gem.alternateNames.length > 0) {
-        gem.alternateNames.forEach(n => {
-          if (n?.trim()) all.add(n.trim());
-        });
-      } else if (gem.name) {
-        // fallback: use main name if no alternateNames
-        all.add(gem.name.trim());
-      }
-    });
-    return Array.from(all).sort();
-  }, [gemstoneOptions]);
+  // const gemstoneSubcategories = React.useMemo(() => {
+  //   const all = new Set<string>();
+  //   gemstoneOptions.forEach(gem => {
+  //     if (gem.alternateNames && gem.alternateNames.length > 0) {
+  //       gem.alternateNames.forEach(n => {
+  //         if (n?.trim()) all.add(n.trim());
+  //       });
+  //     } else if (gem.name) {
+  //       // fallback: use main name if no alternateNames
+  //       all.add(gem.name.trim());
+  //     }
+  //   });
+  //   return Array.from(all).sort();
+  // }, [gemstoneOptions]);
 
   const subcategoryOptions = isGemstone ? GEMSTONE_SUBCATEGORIES : JEWELRY_SUBCATEGORIES;
 

@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logOut } from "@/redux/userRedux";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import pic from "../assets/react.svg"
@@ -16,6 +16,8 @@ export function ProfileDropdown() {
 
   const firstName = useSelector((state:any)=> state.user.firstName)
   const lastName = useSelector((state:any)=> state.user.lastName)
+
+  const dispatch = useDispatch()
 
   return (
     <DropdownMenu>
@@ -31,7 +33,7 @@ export function ProfileDropdown() {
         <DropdownMenuItem>Profile</DropdownMenuItem>
         <DropdownMenuItem>
           <button onClick={()=>{
-            logOut();
+            dispatch(logOut())
             navigateTo("/")
           }}>
 

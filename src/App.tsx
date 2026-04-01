@@ -1,8 +1,8 @@
 import { createContext } from "react";
 import "./App.css";
-import { useSelector } from "react-redux";
+// import { useSelector } from "react-redux";
 import { useState } from "react";
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Outlet, redirect, RouterProvider } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login/Login";
@@ -29,12 +29,13 @@ import NavbarOffer from "./pages/NavbarOffer/NavbarOffer";
 import Banner from "./pages/Banner/Banner";
 import PoojaMetalOptions from './pages/Pooja_and_Metal/PoojaMetalOptions'
 import OrderDetails from "./pages/Orders/OrderDetails";
+import { useSelector } from "react-redux";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
 
 function App() {
-  // const userType = useSelector((state:any) => state.user.userType);
-  const userType = "admin"
+  const userType = useSelector((state:any) => state.user.userType);
+  // const userType = "admin"
 
 
   const [theme, setTheme] = useState("light");
@@ -49,6 +50,10 @@ function App() {
   };
 
   const Layout = () => {
+
+    if(!userType){
+      redirect('/')
+    }
  
 
     return (

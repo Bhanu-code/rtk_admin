@@ -1,78 +1,68 @@
-import { userRequest } from "@/utils/requestMethods";
 import { useState } from "react";
-import { useMutation, useQuery } from "react-query";
-import { Link, useNavigate, useNavigation, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { IoDiamondSharp } from "react-icons/io5";
-import Image from "../../assets/react.svg";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-
-function convertToArray(input: string): string[] {
-  // Trim whitespace and split the string by commas
-  return input?.split(",").map((item) => item?.trim());
-}
-
-// Example usage:
-const input = "apple, banana, cherry, date";
-const result = convertToArray(input);
-console.log(result); // Output: ['apple', 'banana', 'cherry', 'date']
+import { Loader2, Edit3, ArrowLeft } from "lucide-react";
+import Image from "../../assets/react.svg";
+import { userRequest } from "@/utils/requestMethods";
 
 const GemDetails = () => {
-  const { id } = useParams();
-  const navigateTo = useNavigate();
-
-  const getGemDetails = () => {
-    return userRequest({
-      url: `gemstones/get-gemblog/${id}`,
-      method: "get",
-    });
-  };
-  const deleteGemblogMethod = () => {
-    return userRequest({
-      url: `gemstones/delete-gemblog/${id}`,
-      method: "delete",
-    });
-  };
-
-  const { data } = useQuery("get-gem-details", getGemDetails, {
-    onSuccess: () => {
-      console.log(data);
-    },
-    onError: (error: any) => {
-      console.log(error);
-    },
-  });
-  const { mutate: deleteGemblog, isLoading } = useMutation(
-    "delete-gemblog",
-    deleteGemblogMethod,
-    {
-      onSuccess: (response: any) => {
-        if (response?.status !== 200) {
-          toast.error("Error Deletig!", {
-            position: "bottom-right",
-            duration: 2000,
-          });
-          return;
-        }
-        toast.success("Deleted!", { position: "bottom-right", duration: 2000 });
-        navigateTo("/home/gemblogs");
-      },
-      onError: (error: any) => {
-        console.log(error);
-      },
-    }
-  );
-
-  // console.log(data)
-
-  // Get navigation state for loading indicators
-  const navigation = useNavigation();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [selectedSection, setSelectedSection] = useState("who-should-wear");
 
-  // const [selectedSection, setSelectedSection] = useState('who-should-wear');
+  const getGemDetails = async () => {
+    const response = await userRequest({
+      url: `/gemstones/${id}`,           // Updated to match your new Next.js route
+      method: "GET",
+    });
+    return response;
+  };
+
+  const deleteGemblogMethod = async () => {
+    return userRequest({
+      url: `/gemstones/${id}`,
+      method: "DELETE",
+    });
+  };
+
+  const { data: response, isLoading: isDataLoading } = useQuery(
+    ["get-gem-details", id],
+    getGemDetails,
+    {
+      enabled: !!id,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const gemData = response?.data || response;
+
+  const deleteMutation = useMutation(deleteGemblogMethod, {
+    onSuccess: () => {
+      toast.success("Gemstone deleted successfully", {
+        position: "bottom-right",
+      });
+      queryClient.invalidateQueries("get-all-gems");
+      navigate("/home/gemblogs");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete gemstone", {
+        position: "bottom-right",
+      });
+    },
+  });
+
+  const convertToArray = (input: string | undefined): string[] => {
+    if (!input) return [];
+    return input.split(",").map((item) => item.trim()).filter(Boolean);
+  };
+
+  const benefits = convertToArray(gemData?.shortBenefits);
 
   const navigationItems = [
     { id: "who-should-wear", label: "Who Should Wear?" },
@@ -84,136 +74,149 @@ const GemDetails = () => {
     { id: "curious-facts", label: "Curious Facts" },
   ];
 
-  if (navigation.state === "loading") {
+  const renderContent = () => {
+    if (!gemData) return <div className="text-slate-400">No content available</div>;
+
+    switch (selectedSection) {
+      case "who-should-wear":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.whoShouldWear || "" }} />;
+      case "benefits":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.benefits || "" }} />;
+      case "prices":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.prices || "" }} />;
+      case "quality":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.quality || "" }} />;
+      case "specifications":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.specifications || "" }} />;
+      case "faqs":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.faqs || "" }} />;
+      case "curious-facts":
+        return <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: gemData.curiousFacts || "" }} />;
+      default:
+        return <div className="text-slate-400">Content coming soon...</div>;
+    }
+  };
+
+  if (isDataLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-xl">Loading gemstone details...</div>
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+          <p className="text-slate-400">Loading gemstone details...</p>
+        </div>
       </div>
     );
   }
 
-  const renderContent = () => {
-    switch (selectedSection) {
-      case "who-should-wear":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.whoShouldWear }}
-          />
-        );
-      case "benefits":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.benefits }}
-          />
-        );
-
-      case "quality":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.quality }}
-          />
-        );
-
-      case "specifications":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.specifications }}
-          />
-        );
-
-      case "curious-facts":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.curiousFacts }}
-          />
-        );
-      case "prices":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.prices }}
-          />
-        );
-      case "faqs":
-        return (
-          <div
-            className="space-y-6"
-            dangerouslySetInnerHTML={{ __html: data?.data?.faqs }}
-          />
-        );
-
-      default:
-        return <div>Content coming soon...</div>;
-    }
-  };
-
-  const benefits = convertToArray(data?.data?.shortBenefits);
+  if (!gemData) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-2xl text-slate-300">Gemstone not found</p>
+          <Button onClick={() => navigate("/home/gemblogs")} className="mt-6">
+            Back to Gemstones
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col w-10/12 mb-20 mx-auto">
-       <div className="flex flex-end w-full mt-5">
-        <Link to={`/home/gemblogs/edit/${id}`}>
-          <Button className="px-2 py-1 ml-auto bg-blue-600 text-white  mb-5">
-            Edit Gemstone
+    <div className="min-h-screen bg-[#020617] pb-20">
+      <div className="max-w-6xl mx-auto px-6 pt-8">
+        {/* Header Navigation */}
+        <div className="flex items-center justify-between mb-10">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/home/gemblogs")}
+            className="flex items-center gap-2 text-slate-400 hover:text-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back to All Gemstones
           </Button>
-        </Link>
-      </div>
-      <div className="flex justify-between items-center w-10/12 mx-auto mb-8">
-        <div className="flex flex-col space-y-4">
-          <h1 className="font-medium font-serif text-4xl">
-            {data?.data?.name}
-          </h1>
-          <p className="text-gray-700">{data?.data?.description}</p>
 
-          {/* Benefits icons */}
-          <div className="grid grid-cols-4 gap-8 py-6 border-t border-b border-gray-200">
-            {benefits?.map((benefit: string) => (
-              <div className="flex flex-col items-center text-center space-y-2">
-                <IoDiamondSharp className="w-5 h-5 text-red-500" />
-                <span className="text-sm">{benefit}</span>
-              </div>
-            ))}
+          <div className="flex gap-3">
+            <Link to={`/home/gemblogs/edit/${id}`}>
+              <Button className="bg-indigo-600 hover:bg-indigo-500 flex items-center gap-2">
+                <Edit3 className="h-4 w-4" />
+                Edit Gemstone
+              </Button>
+            </Link>
+
+            <ConfirmDelete 
+              onConfirm={() => deleteMutation.mutate()} 
+              title="Delete Gemstone"
+              description="This action cannot be undone. This will permanently delete the gemstone and its associated data."
+            />
           </div>
         </div>
 
-        <img
-          src={data?.data?.imageUrl ? data?.data?.imageUrl : Image}
-          alt="Red Coral Gemstone"
-          className="w-64 h-64 object-contain rounded-lg shadow-lg mt-10 ml-20"
-        />
-      </div>
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Left Column - Image + Basic Info */}
+          <div className="lg:w-5/12">
+            <div className="sticky top-6">
+              <div className="relative rounded-3xl overflow-hidden bg-slate-900 border border-white/10 aspect-square mb-8">
+                <img
+                  src={gemData.imageUrl || Image}
+                  alt={gemData.name}
+                  className="w-full h-full object-contain p-8 transition-transform duration-500 hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = Image;
+                  }}
+                />
+              </div>
 
-      <div className="flex space-x-6 border-b mb-6">
-        {navigationItems.map((item) => (
-          <button
-            key={item?.id}
-            onClick={() => setSelectedSection(item?.id)}
-            className={`px-4 py-2 font-medium transition-colors duration-200 ${
-              selectedSection === item.id
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-600 hover:text-blue-600"
-            }`}
-          >
-            {item?.label}
-          </button>
-        ))}
-      </div>
+              <div>
+                <h1 className="text-4xl font-serif font-medium text-white mb-4">
+                  {gemData.name}
+                </h1>
+                <p className="text-slate-400 leading-relaxed text-lg">
+                  {gemData.description}
+                </p>
+              </div>
 
-      <div className="py-6">{renderContent()}</div>
-      <div className="danger">
-        {/* <Button className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white">Delete</Button> */}
-        {isLoading ? (
-          <span className="text-red-600">Deleting....</span>
-        ) : (
-          <ConfirmDelete onConfirm={deleteGemblog} />
-        )}
+              {/* Short Benefits */}
+              {benefits.length > 0 && (
+                <div className="mt-10">
+                  <h3 className="text-sm uppercase tracking-widest text-slate-500 mb-4">Key Benefits</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {benefits.map((benefit: string, index: number) => (
+                      <div key={index} className="flex items-start gap-3 bg-slate-900/70 border border-white/5 rounded-2xl p-4">
+                        <IoDiamondSharp className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-slate-300 text-sm leading-tight">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column - Navigation + Content */}
+          <div className="lg:w-7/12">
+            <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4 mb-8">
+              {navigationItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedSection(item.id)}
+                  className={`px-6 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ${
+                    selectedSection === item.id
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                      : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="prose prose-invert max-w-none prose-headings:text-white prose-p:text-slate-300">
+              {renderContent()}
+            </div>
+          </div>
+        </div>
       </div>
-      {/* <GemstoneFilters /> */}
     </div>
   );
 };

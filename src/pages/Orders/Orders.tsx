@@ -4,7 +4,6 @@ import {
   Search,
   Download,
   ArrowUpDown,
-  MoreVertical,
   Package,
   Clock,
   CheckCircle,
@@ -23,7 +22,7 @@ const Orders = () => {
     });
   };
 
-  const { data: allOrders, isLoading: loadingOrders } = useQuery("get-all-orders", getAllOrders, {
+  const { data: allOrders } = useQuery("get-all-orders", getAllOrders, {
     onSuccess: () => {
       console.log(allOrders);
     },
@@ -94,7 +93,7 @@ const Orders = () => {
   ];
 
   const [orders, setOrders] = useState(initialOrders);
-  console.log(setOrders);
+  console.log(orders, setOrders);
   const [selectedOrder, setSelectedOrder] = useState({
     id: "",
     date: "",
