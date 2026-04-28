@@ -16,7 +16,7 @@ const Products = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const categories = ['All', 'Gemstones', 'Jewelry']; // Updated to match your actual categories
+  const categories = ['All', 'Gemstones', 'Jewelry']; 
   const statuses = ['All', 'Draft', 'Feature', 'Public'];
 
   const { data: AllProducts, isLoading } = useQuery(
