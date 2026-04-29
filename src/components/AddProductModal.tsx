@@ -17,10 +17,10 @@ import {
 
 type ImageFieldName = "base_img" | "sec_img1" | "sec_img2" | "product_vid" | "product_vid2" | "product_gif";
 
-interface GemstoneApiResponse {
-  name: string;
-  alternateNames?: string[] | string;
-}
+// interface GemstoneApiResponse {
+//   name: string;
+//   alternateNames?: string[] | string;
+// }
 
 interface ProductFormData {
   [key: string]: any;
@@ -98,10 +98,10 @@ const GEMSTONE_COLORS: Record<string, string> = {
 const caratToGrams = (c: number) => +(c * 0.2).toFixed(4);
 const caratToRatti = (c: number) => +(c * 1.11).toFixed(4);
 
-const buildSku = (prefix: string, existing: string): string => {
-  const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
-  return `${prefix}-${seq}`;
-};
+// const buildSku = (prefix: string, existing: string): string => {
+//   const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
+//   return `${prefix}-${seq}`;
+// };
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
 
@@ -225,7 +225,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   const [selectedSpecies, setSelectedSpecies] = useState("");
   const [dimensionString, setDimensionString] = useState("");
   const [isGemstone, setIsGemstone]           = useState(false);
-  const [gemstoneOptions, setGemstoneOptions] = useState<{ name: string; alternateNames: string[] }[]>([]);
+  // const [gemstoneOptions, setGemstoneOptions] = useState<{ name: string; alternateNames: string[] }[]>([]);
   const [isLoadingGemstones, setIsLoadingGemstones] = useState(true);
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [gemDropdownOpen, setGemDropdownOpen] = useState(false);
