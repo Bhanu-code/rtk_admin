@@ -79,7 +79,7 @@ const AttachedProducts = ({ gemblogId }: { gemblogId: string }) => {
   const { data, isLoading } = useQuery(
     ["gemblog-products", gemblogId],
     async () => {
-      const res = await userRequest({ url: "/product/get-all-products/", method: "GET" });
+      const res = await userRequest({ url: "/product", method: "GET" });
       const all: AttachedProduct[] = res?.data ?? res ?? [];
       // Filter products that have this gemblog selected
       return all.filter((p) => p.gemblog_id === gemblogId);
