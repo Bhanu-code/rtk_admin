@@ -65,6 +65,7 @@ interface ProductFormData {
   species: string;
   variety: string;
   other_chars: string;
+  gemblog_id: string;  // links product to a gemblog
   // UI-only — stripped before API call
   discount_type: "amount" | "percentage";
   discount_value: string;
@@ -93,9 +94,9 @@ const GEMSTONE_COLORS: Record<string, string> = {
 };
 
 // ─── Weight conversion helpers ────────────────────────────────────────────────
-// 1 carat = 0.2 g  |  1 carat = 0.9114 ratti
+// 1 carat = 0.2 g  |  1 carat = 1.11 ratti
 const caratToGrams = (c: number) => +(c * 0.2).toFixed(4);
-const caratToRatti = (c: number) => +(c * 0.9114).toFixed(4);
+const caratToRatti = (c: number) => +(c * 1.11).toFixed(4);
 
 const buildSku = (prefix: string, existing: string): string => {
   const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
@@ -205,6 +206,7 @@ const INITIAL_FORM: ProductFormData = {
   ref_index: "", hardness: "", sp_gravity: "", inclusion: "",
   species: "", variety: "", other_chars: "", shape_cut: "",
   certificate_no: `GEM-${Math.floor(10000 + Math.random() * 90000)}`,
+  gemblog_id: "",
   discount_type: "percentage",
   discount_value: "",
 };
@@ -227,6 +229,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   const [isLoadingGemstones, setIsLoadingGemstones] = useState(true);
   const [isSubmitting, setIsSubmitting]       = useState(false);
   const [gemDropdownOpen, setGemDropdownOpen] = useState(false);
+  const [gemblogs, setGemblogs]               = useState<{id: string; name: string}[]>([]);
+  const [loadingGemblogs, setLoadingGemblogs] = useState(false);
 
   // Close gem dropdown on outside click
   useEffect(() => {
@@ -243,7 +247,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     const fetchGemstones = async () => {
       setIsLoadingGemstones(true);
       try {
-        const res = await userRequest({ url: "/gemstones/get-all-gemblog", method: "GET" });
+        const res = await userRequest({ url: "/gemstones/get-all-gemblogs", method: "GET" });
         if (!res.data || !Array.isArray(res.data)) throw new Error("Invalid response");
         const gems = res.data
           .filter((g: GemstoneApiResponse) => g.name && !g.name.toLowerCase().includes("demo"))
@@ -280,7 +284,20 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     return [...fromApi, ...fromMap];
   }, [gemstoneOptions]);
 
-  const subcategoryOptions = isGemstone ? GEMSTONE_SUBCATEGORIES : JEWELRY_SUBCATEGORIES;
+  // ── Fetch gemblogs for selector ─────────────────────────────────────────────
+  useEffect(() => {
+    setLoadingGemblogs(true);
+    userRequest({ url: "/gemstones", method: "GET" })
+      .then(res => {
+        const list = res?.data ?? [];
+        setGemblogs(list.filter((g: any) => g.name && !g.name.toLowerCase().includes("demo"))
+          .map((g: any) => ({ id: g.id, name: g.name })));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingGemblogs(false));
+  }, []);
+
+    const subcategoryOptions = isGemstone ? GEMSTONE_SUBCATEGORIES : JEWELRY_SUBCATEGORIES;
 
   useEffect(() => {
     if (subcategoryOptions.length > 0 && !formData.subcategory)
@@ -291,7 +308,13 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   useEffect(() => {
     const actual   = parseFloat(formData.actual_price);
     const discount = parseFloat(formData.discount_value);
-    if (isNaN(actual) || actual <= 0 || isNaN(discount) || discount <= 0) return;
+    // No actual price yet — nothing to do
+    if (isNaN(actual) || actual <= 0) return;
+    // No discount entered → sale price equals actual price
+    if (isNaN(discount) || discount <= 0) {
+      setFormData(p => ({ ...p, sale_price: actual.toFixed(2) }));
+      return;
+    }
     const sale = formData.discount_type === "percentage"
       ? actual - (actual * Math.min(discount, 100)) / 100
       : actual - discount;
@@ -320,7 +343,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   // ── Gemstone select → auto-prefix SKU ──────────────────────────────────────
   const handleGemstoneSelect = (gemName: string) => {
     const prefix = GEMSTONE_SKU_MAP[gemName] ?? gemName.slice(0, 3).toUpperCase();
-    setFormData(p => ({ ...p, gemstone_name: gemName, sku_code: buildSku(prefix, p.sku_code) }));
+    setFormData(p => ({ ...p, gemstone_name: gemName, sku_code: prefix }));
     setGemDropdownOpen(false);
   };
 
@@ -434,101 +457,109 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     });
 
   const generateCertificate = async (): Promise<File | null> => {
-    // Resolve the gemstone image to base64 so html2canvas can read pixel data
-    const rawSrc = formData.base_img ? URL.createObjectURL(formData.base_img) : null;
+    const rawSrc    = formData.base_img ? URL.createObjectURL(formData.base_img) : null;
     const gemImgSrc = rawSrc ? await toBase64(rawSrc) : null;
-
-    // Build the same HTML that CertificateGenerator produces — but fully inline
-    // so there are zero async dependencies when html2canvas runs.
-    const logoUrl  = (await import("../assets/logo.jpeg")).default;
-    const sigUrl   = (await import("../assets/rizwan_signature.jpg")).default;
-    const logoB64  = await toBase64(logoUrl);
-    const sigB64   = await toBase64(sigUrl);
+    const logoUrl   = (await import("../assets/logo.jpeg")).default;
+    const sigUrl    = (await import("../assets/rizwan_signature.jpg")).default;
+    const logoB64   = await toBase64(logoUrl);
+    const sigB64    = await toBase64(sigUrl);
 
     const fd = formData;
-    const rows: string[] = [];
-    const row = (label: string, val: string | number | undefined) =>
-      val ? `<p style="font-weight:500">${label}</p><p>${val}</p>` : "";
 
-    rows.push(row("Certificate No.", fd.certificate_no));
-    if (fd.weight_ratti) rows.push(row("Weight", `${fd.weight_ratti} RATTI`));
-    if (fd.shape_cut)    rows.push(row("Shape and Cut", fd.shape_cut));
-    if (fd.color)        rows.push(row("Colour", fd.color));
-    if (fd.transparency) rows.push(row("Transparency", fd.transparency));
-    if (fd.length && fd.width && fd.height)
-      rows.push(row("Dimension (L.B.H.in mm)", `${fd.length}×${fd.width}×${fd.height}`));
-    if (fd.ref_index)    rows.push(row("Ref. Index", fd.ref_index));
-    if (fd.hardness)     rows.push(row("Hardness", fd.hardness));
-    if (fd.sp_gravity)   rows.push(row("SP. Gravity", fd.sp_gravity));
-    if (fd.luminescence) rows.push(row("Luminescence", fd.luminescence));
-    if (fd.op_char && fd.crystal_sys)
-      rows.push(row("Op. Char, Crystal Sys", `${fd.op_char}, ${fd.crystal_sys}`));
-    if (fd.inclusion)    rows.push(row("Inclusion", fd.inclusion));
-    if (fd.species)      rows.push(row("Species", fd.species));
-    if (fd.variety)      rows.push(row("Variety", fd.variety));
+    const row = (label: string, val: string | number | undefined | null) =>
+      val != null && val !== ""
+        ? `<div style="display:flex;border-bottom:1px solid #f0f0f0;padding:3px 0;font-size:11px;line-height:1.4">
+             <span style="min-width:140px;color:#333;font-weight:500">${label}</span>
+             <span style="margin-right:4px;color:#333">:</span>
+             <span style="color:#c00;font-weight:600;flex:1">${val}</span>
+           </div>`
+        : "";
+
+    const dimStr = fd.length && fd.width && fd.height ? `${fd.length}x${fd.width}x${fd.height}` : null;
+    const opStr  = [fd.op_char, fd.crystal_sys].filter(Boolean).join(", ") || null;
 
     const gemImgHtml = gemImgSrc
-      ? `<img src="${gemImgSrc}" alt="Gemstone"
-           style="max-width:100%;max-height:224px;object-fit:contain;border:1px solid #e5e7eb" />`
-      : `<div style="width:100%;height:224px;background:#e5e7eb;display:flex;align-items:center;
-           justify-content:center;color:#6b7280;font-size:14px">No image provided</div>`;
+      ? `<img src="${gemImgSrc}" alt="Gemstone" style="max-width:100%;max-height:180px;object-fit:contain" />`
+      : `<div style="width:140px;height:140px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px;border-radius:4px">No image</div>`;
 
     const html = `
-      <div style="width:800px;font-family:Arial,sans-serif;background:#fff;padding:16px;box-sizing:border-box">
-        <div style="border:2px solid #dc2626;padding:16px">
+      <div style="width:720px;font-family:Arial,Helvetica,sans-serif;background:#fff;border:2.5px solid #c00;box-sizing:border-box;overflow:hidden">
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #c00;padding:8px 12px;background:#fff">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${logoB64 ? `<img src="${logoB64}" alt="Logo" style="height:48px;width:48px;object-fit:contain;border-radius:4px" />` : ""}
             <div>
-              <h1 style="font-size:20px;font-weight:700;color:#dc2626;margin:0">IGI-GEM TESTING LABORATORY</h1>
-              <p style="font-size:12px;margin:2px 0 0">A venture by alumni of IGI</p>
-            </div>
-            <div style="text-align:right">
-              <p style="font-weight:700;margin:0">CUSTOMER NAME</p>
+              <div style="font-size:15px;font-weight:700;color:#c00;letter-spacing:0.5px;line-height:1.2">IGI-GEM TESTING LABORATORY</div>
+              <div style="font-size:10px;color:#555;margin-top:2px">A venture by alumni of IGI</div>
             </div>
           </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px;align-content:start">
-              ${rows.join("")}
-            </div>
-
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center">
-              ${gemImgHtml}
-              <div style="display:flex;gap:40px;margin-top:8px">
-                ${logoB64 ? `<img src="${logoB64}" alt="Logo" style="height:128px;object-fit:contain" />` : ""}
-                ${sigB64  ? `<img src="${sigB64}"  alt="Sig"  style="height:128px;object-fit:contain" />` : ""}
-              </div>
-              <p style="font-size:12px;color:#dc2626;align-self:flex-end;margin:4px 0 0">GEMOLOGIST (IGI)</p>
-            </div>
-          </div>
-
-          <div style="margin-top:16px;padding-top:8px;border-top:1px solid #d1d5db;text-align:center">
-            <p style="font-size:12px;font-weight:500;color:#dc2626;margin:0">
-              THIS IS A SYSTEM GENERATED SAMPLE CERTIFICATE — www.igigemlab.in
-            </p>
-          </div>
-
+          <div style="font-size:11px;font-weight:700;color:#333;text-align:right">${fd.name || "CUSTOMER NAME"}</div>
         </div>
+
+        <!-- Body -->
+        <div style="display:flex;min-height:280px">
+
+          <!-- Left: fields -->
+          <div style="flex:1 1 55%;padding:10px 12px;border-right:1.5px solid #e0e0e0">
+            ${row("Certificate No.", fd.certificate_no)}
+            ${fd.weight_ratti ? row("Weight", `${fd.weight_ratti} RATTI`) : ""}
+            ${row("Shape and Cut", fd.shape_cut)}
+            ${row("Colour", fd.color)}
+            ${row("Transparency", fd.transparency)}
+            ${dimStr ? row("Dimension (L.B.H in mm)", dimStr) : ""}
+            ${row("Ref. Index", fd.ref_index)}
+            ${row("Hardness", fd.hardness)}
+            ${row("SP. Gravity", fd.sp_gravity)}
+            ${row("Luminescence", fd.luminescence)}
+            ${opStr ? row("Op. Char, Crystal Sys", opStr) : ""}
+            ${row("Inclusion", fd.inclusion)}
+            ${row("Species", fd.species)}
+            ${row("Variety", fd.variety)}
+          </div>
+
+          <!-- Right: image + logos -->
+          <div style="flex:1 1 45%;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px">
+            <!-- Ratna Kuthi logo top-right -->
+            <div style="align-self:flex-end">
+              ${logoB64 ? `<img src="${logoB64}" alt="Ratna Kuthi" style="height:36px;object-fit:contain" />` : ""}
+            </div>
+            <!-- Gemstone image -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;width:100%">
+              ${gemImgHtml}
+            </div>
+            <!-- Signature -->
+            <div style="align-self:flex-end;text-align:right">
+              ${sigB64 ? `<img src="${sigB64}" alt="Signature" style="height:52px;object-fit:contain" />` : ""}
+              <div style="font-size:9px;color:#c00;margin-top:2px;font-weight:600">GEMOLOGIST (IGI)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background:#c00;padding:5px 12px;text-align:center">
+          <span style="color:#fff;font-size:10px;font-weight:600;letter-spacing:0.5px">
+            VERIFY YOUR REPORT ONLINE — www.igigemlab.in
+          </span>
+        </div>
+
       </div>`;
 
-    // Inject into a hidden but in-flow container
     const container = document.createElement("div");
     Object.assign(container.style, {
       position: "fixed", top: "0", left: "0",
-      width: "800px", zIndex: "-9999", opacity: "0", pointerEvents: "none",
+      width: "720px", zIndex: "-9999", opacity: "0", pointerEvents: "none",
     });
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    // One rAF to let the browser paint, then capture
     await new Promise(r => requestAnimationFrame(r));
-    await new Promise(r => requestAnimationFrame(r)); // two frames to be safe
+    await new Promise(r => requestAnimationFrame(r));
 
     try {
       const canvas = await html2canvas(container.firstElementChild as HTMLElement, {
         scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff",
-        width: 800, windowWidth: 800,
+        width: 720, windowWidth: 720,
       });
       return await new Promise(resolve => {
         canvas.toBlob(blob => {
@@ -673,7 +704,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                     <input name="name" value={formData.name} onChange={handleChange}
                       placeholder="e.g. Natural Ruby" className={inputCls} />
                   </div>
-                  <div>
+                  <div className="hidden">
                     <label className={labelCls}>SKU Code</label>
                     <div className="relative">
                       <input name="sku_code" value={formData.sku_code} onChange={handleChange}
@@ -810,7 +841,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                       </div>
 
                       {/* Carat range sub-category */}
-                      <div>
+                      <div className="hidden">
                         <label className={labelCls}>Carat Range</label>
                         <div className="relative">
                           <select value={formData.subcategory} onChange={e => set("subcategory", e.target.value)} className={selectCls}>
@@ -848,6 +879,30 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                     )}
                   </div>
                 )}
+
+                {/* Gemblog link */}
+                <div>
+                  <label className={labelCls}>
+                    Link to Gemblog
+                    <span className="ml-1.5 text-slate-600 font-normal">(optional — shows product on that gemblog page)</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.gemblog_id}
+                      onChange={e => set("gemblog_id", e.target.value)}
+                      className={selectCls}
+                      disabled={loadingGemblogs}
+                    >
+                      <option value="" className="bg-slate-900">
+                        {loadingGemblogs ? "Loading gemblogs..." : "— No gemblog —"}
+                      </option>
+                      {gemblogs.map(g => (
+                        <option key={g.id} value={g.id} className="bg-slate-900">{g.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+                  </div>
+                </div>
 
                 {/* Description */}
                 <div>
@@ -1011,7 +1066,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                       </label>
                       <input value={formData.weight_carat} onChange={handleCaratChange}
                         placeholder="0.00" className={inputCls} />
-                      <p className="text-xs text-slate-600 mt-1">1 ct = 0.2 g = 0.9114 ratti</p>
+                      <p className="text-xs text-slate-600 mt-1">1 ct = 0.2 g = 1.11 ratti</p>
                     </div>
                     <div>
                       <label className={labelCls}>Weight (ratti) <span className="text-slate-600">(auto)</span></label>
