@@ -98,10 +98,10 @@ const GEMSTONE_COLORS: Record<string, string> = {
 const caratToGrams = (c: number) => +(c * 0.2).toFixed(4);
 const caratToRatti = (c: number) => +(c * 1.11).toFixed(4);
 
-const buildSku = (prefix: string, existing: string): string => {
-  const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
-  return `${prefix}-${seq}`;
-};
+// const buildSku = (prefix: string, existing: string): string => {
+//   const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
+//   return `${prefix}-${seq}`;
+// };
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
 

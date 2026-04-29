@@ -11,10 +11,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Upload, Plus, Trash2, Package, X, Search, ShoppingBag } from "lucide-react";
+import { Loader2, Upload, Plus, Trash2 } from "lucide-react";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation,  useQueryClient } from "react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -35,139 +35,139 @@ interface GemstoneFormData {
   attachedProducts: string[]; // product IDs
 }
 
-interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  base_img_url: string | null;
-  sale_price: number;
-  category: string;
-  subcategory: string;
-}
+// interface Product {
+//   id: string;
+//   name: string;
+//   sku: string;
+//   base_img_url: string | null;
+//   sale_price: number;
+//   category: string;
+//   subcategory: string;
+// }
 
 // ─── ProductSelector — defined OUTSIDE to prevent re-mount on parent re-render ──
-const ProductSelector = ({
-  selected,
-  onChange,
-}: {
-  selected: string[];
-  onChange: (ids: string[]) => void;
-}) => {
-  const [search, setSearch] = useState("");
+// const ProductSelector = ({
+//   selected,
+//   onChange,
+// }: {
+//   selected: string[];
+//   onChange: (ids: string[]) => void;
+// }) => {
+//   const [search, setSearch] = useState("");
 
-  const { data: productsData, isLoading } = useQuery(
-    "get-all-products-for-gem",
-    async () => {
-      const res = await fetch(`${import.meta.env.VITE_PROXY_URL}/product`);
-      if (!res.ok) throw new Error("Failed to fetch products");
-      const json = await res.json();
-      return (json.data ?? json) as Product[];
-    },
-    { staleTime: 60_000 }
-  );
+//   const { data: productsData, isLoading } = useQuery(
+//     "get-all-products-for-gem",
+//     async () => {
+//       const res = await fetch(`${import.meta.env.VITE_PROXY_URL}/product`);
+//       if (!res.ok) throw new Error("Failed to fetch products");
+//       const json = await res.json();
+//       return (json.data ?? json) as Product[];
+//     },
+//     { staleTime: 60_000 }
+//   );
 
-  const products = productsData ?? [];
-  const filtered = products.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(search.toLowerCase()) ||
-    p.category?.toLowerCase().includes(search.toLowerCase())
-  );
+//   const products = productsData ?? [];
+//   const filtered = products.filter((p) =>
+//     p.name?.toLowerCase().includes(search.toLowerCase()) ||
+//     p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+//     p.category?.toLowerCase().includes(search.toLowerCase())
+//   );
 
-  const toggle = (id: string) =>
-    onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+//   const toggle = (id: string) =>
+//     onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
 
-  const selectedProducts = products.filter((p) => selected.includes(p.id));
+//   const selectedProducts = products.filter((p) => selected.includes(p.id));
 
-  return (
-    <div className="space-y-4">
-      {selectedProducts.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-400">
-            {selectedProducts.length} product{selectedProducts.length !== 1 ? "s" : ""} attached
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {selectedProducts.map((p) => (
-              <div key={p.id} className="flex items-center gap-2 pl-2 pr-1 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                {p.base_img_url
-                  ? <img src={p.base_img_url} alt={p.name} className="h-5 w-5 rounded object-cover flex-shrink-0" />
-                  : <ShoppingBag className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
-                }
-                <span className="text-xs text-indigo-300 max-w-[140px] truncate">{p.name}</span>
-                <button type="button" onClick={() => toggle(p.id)}
-                  className="ml-0.5 p-0.5 rounded hover:bg-indigo-500/20 text-indigo-400 hover:text-white transition-colors">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+//   return (
+//     <div className="space-y-4">
+//       {selectedProducts.length > 0 && (
+//         <div className="space-y-2">
+//           <p className="text-xs font-medium text-slate-400">
+//             {selectedProducts.length} product{selectedProducts.length !== 1 ? "s" : ""} attached
+//           </p>
+//           <div className="flex flex-wrap gap-2">
+//             {selectedProducts.map((p) => (
+//               <div key={p.id} className="flex items-center gap-2 pl-2 pr-1 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+//                 {p.base_img_url
+//                   ? <img src={p.base_img_url} alt={p.name} className="h-5 w-5 rounded object-cover flex-shrink-0" />
+//                   : <ShoppingBag className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
+//                 }
+//                 <span className="text-xs text-indigo-300 max-w-[140px] truncate">{p.name}</span>
+//                 <button type="button" onClick={() => toggle(p.id)}
+//                   className="ml-0.5 p-0.5 rounded hover:bg-indigo-500/20 text-indigo-400 hover:text-white transition-colors">
+//                   <X className="h-3 w-3" />
+//                 </button>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+//       )}
 
-      <div className="border border-white/10 rounded-xl overflow-hidden">
-        <div className="relative border-b border-white/10">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, SKU or category..."
-            className="w-full bg-slate-950 text-slate-200 text-sm pl-9 pr-4 py-2.5 placeholder:text-slate-600 focus:outline-none"
-          />
-        </div>
-        <div className="max-h-64 overflow-y-auto bg-slate-950">
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading products...
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-slate-600 text-sm">
-              <Package className="h-8 w-8" />
-              {search ? "No products match your search" : "No products found"}
-            </div>
-          ) : (
-            filtered.map((product) => {
-              const isSelected = selected.includes(product.id);
-              return (
-                <button key={product.id} type="button" onClick={() => toggle(product.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-white/5 last:border-0 ${
-                    isSelected ? "bg-indigo-500/10 hover:bg-indigo-500/15" : "hover:bg-white/[0.03]"
-                  }`}
-                >
-                  <div className={`h-4 w-4 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
-                    isSelected ? "bg-indigo-600 border-indigo-600" : "border-white/20 bg-transparent"
-                  }`}>
-                    {isSelected && (
-                      <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
-                    {product.base_img_url
-                      ? <img src={product.base_img_url} alt={product.name} className="h-full w-full object-cover" />
-                      : <div className="h-full w-full flex items-center justify-center"><ShoppingBag className="h-4 w-4 text-slate-600" /></div>
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isSelected ? "text-indigo-200" : "text-slate-200"}`}>{product.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-slate-500">{product.sku}</span>
-                      <span className="text-slate-700">·</span>
-                      <span className="text-xs text-slate-500 capitalize">{product.category}</span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-white flex-shrink-0">
-                    ₹{product.sale_price?.toLocaleString("en-IN")}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+//       <div className="border border-white/10 rounded-xl overflow-hidden">
+//         <div className="relative border-b border-white/10">
+//           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+//           <input
+//             type="text"
+//             value={search}
+//             onChange={(e) => setSearch(e.target.value)}
+//             placeholder="Search by name, SKU or category..."
+//             className="w-full bg-slate-950 text-slate-200 text-sm pl-9 pr-4 py-2.5 placeholder:text-slate-600 focus:outline-none"
+//           />
+//         </div>
+//         <div className="max-h-64 overflow-y-auto bg-slate-950">
+//           {isLoading ? (
+//             <div className="flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
+//               <Loader2 className="h-4 w-4 animate-spin" /> Loading products...
+//             </div>
+//           ) : filtered.length === 0 ? (
+//             <div className="flex flex-col items-center gap-2 py-8 text-slate-600 text-sm">
+//               <Package className="h-8 w-8" />
+//               {search ? "No products match your search" : "No products found"}
+//             </div>
+//           ) : (
+//             filtered.map((product) => {
+//               const isSelected = selected.includes(product.id);
+//               return (
+//                 <button key={product.id} type="button" onClick={() => toggle(product.id)}
+//                   className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-white/5 last:border-0 ${
+//                     isSelected ? "bg-indigo-500/10 hover:bg-indigo-500/15" : "hover:bg-white/[0.03]"
+//                   }`}
+//                 >
+//                   <div className={`h-4 w-4 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
+//                     isSelected ? "bg-indigo-600 border-indigo-600" : "border-white/20 bg-transparent"
+//                   }`}>
+//                     {isSelected && (
+//                       <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+//                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+//                       </svg>
+//                     )}
+//                   </div>
+//                   <div className="h-10 w-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
+//                     {product.base_img_url
+//                       ? <img src={product.base_img_url} alt={product.name} className="h-full w-full object-cover" />
+//                       : <div className="h-full w-full flex items-center justify-center"><ShoppingBag className="h-4 w-4 text-slate-600" /></div>
+//                     }
+//                   </div>
+//                   <div className="flex-1 min-w-0">
+//                     <p className={`text-sm font-medium truncate ${isSelected ? "text-indigo-200" : "text-slate-200"}`}>{product.name}</p>
+//                     <div className="flex items-center gap-2 mt-0.5">
+//                       <span className="text-xs text-slate-500">{product.sku}</span>
+//                       <span className="text-slate-700">·</span>
+//                       <span className="text-xs text-slate-500 capitalize">{product.category}</span>
+//                     </div>
+//                   </div>
+//                   <span className="text-sm font-semibold text-white flex-shrink-0">
+//                     ₹{product.sale_price?.toLocaleString("en-IN")}
+//                   </span>
+//                 </button>
+//               );
+//             })
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
 
 const GemstoneForm = () => {
   const navigate = useNavigate();
