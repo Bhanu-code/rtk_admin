@@ -1,7 +1,4 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
@@ -9,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Upload, Plus, Trash2, ArrowLeft, Save, ImageIcon, Package, X, Search, ShoppingBag } from "lucide-react";
+import { Loader2, Upload, ArrowLeft, Save, ImageIcon, Plus, Trash2 } from "lucide-react";
 import { FormattedPasteArea } from "./blog/WhoShouldWear";
 import { ClientOnly } from "remix-utils/client-only";
 import { useMutation, useQuery, useQueryClient } from "react-query";
@@ -34,7 +31,7 @@ interface GemstoneFormData {
   featured: boolean;
   imageUrl?: string;
   newImage?: File | null;
-  attachedProducts: string[]; // array of product IDs
+  attachedProducts?: string[]; // optional — managed from product side now
 }
 
 interface EditGemstoneFormProps {
@@ -44,183 +41,16 @@ interface EditGemstoneFormProps {
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
-const inputCls  = "w-full bg-white/5 border border-white/8 text-white placeholder:text-slate-600 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 transition-all";
-const labelCls  = "text-xs font-medium text-slate-400 mb-1.5 block";
-const sectionTitleCls = "text-sm font-semibold text-white";
+const inputCls = "w-full bg-white/5 border border-white/8 text-white placeholder:text-slate-600 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 transition-all";
+const labelCls = "text-xs font-medium text-slate-400 mb-1.5 block";
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-// ─── ProductSelector — OUTSIDE component (stable reference = no focus issues) ──
-interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  base_img_url: string | null;
-  sale_price: number;
-  category: string;
-  subcategory: string;
-}
-
-const ProductSelector = ({
-  selected,
-  onChange,
-}: {
-  selected: string[];
-  onChange: (ids: string[]) => void;
-}) => {
-  const [search, setSearch] = useState("");
-
-  const { data: productsData, isLoading } = useQuery(
-    "get-all-products-for-gem",
-    async () => {
-      const res = await fetch(`${import.meta.env.VITE_PROXY_URL}/product`);
-      if (!res.ok) throw new Error("Failed to fetch products");
-      const json = await res.json();
-      return (json.data ?? json) as Product[];
-    },
-    { staleTime: 60_000 }
-  );
-
-  const products = productsData ?? [];
-  const filtered = products.filter((p) =>
-    p.name?.toLowerCase()?.includes(search.toLowerCase()) ||
-    p.sku?.toLowerCase()?.includes(search.toLowerCase()) ||
-    p.category?.toLowerCase()?.includes(search.toLowerCase())
-  );
-
-  const toggle = (id: string) => {
-    onChange(selected?.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
-  };
-
-  const selectedProducts = products.filter((p) => selected?.includes(p.id));
-
-  return (
-    <div className="space-y-4">
-      {/* Selected chips */}
-      {selectedProducts?.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-400">
-            {selectedProducts?.length} product{selectedProducts?.length !== 1 ? "s" : ""} attached
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {selectedProducts.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-2 pl-2 pr-1 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg"
-              >
-                {p.base_img_url ? (
-                  <img src={p.base_img_url} alt={p.name} className="h-5 w-5 rounded object-cover flex-shrink-0" />
-                ) : (
-                  <ShoppingBag className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
-                )}
-                <span className="text-xs text-indigo-300 max-w-[140px] truncate">{p.name}</span>
-                <button
-                  type="button"
-                  onClick={() => toggle(p.id)}
-                  className="ml-0.5 p-0.5 rounded hover:bg-indigo-500/20 text-indigo-400 hover:text-white transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Search + list */}
-      <div className="border border-white/8 rounded-xl overflow-hidden">
-        {/* Search bar */}
-        <div className="relative border-b border-white/8">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, SKU or category..."
-            className="w-full bg-slate-950 text-slate-200 text-sm pl-9 pr-4 py-2.5 placeholder:text-slate-600 focus:outline-none"
-          />
-        </div>
-
-        {/* Product list */}
-        <div className="max-h-64 overflow-y-auto bg-slate-950">
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading products...
-            </div>
-          ) : filtered?.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8 text-slate-600 text-sm">
-              <Package className="h-8 w-8" />
-              {search ? "No products match your search" : "No products found"}
-            </div>
-          ) : (
-            filtered.map((product) => {
-              const isSelected = selected?.includes(product.id);
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => toggle(product.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-white/5 last:border-0 ${
-                    isSelected
-                      ? "bg-indigo-500/10 hover:bg-indigo-500/15"
-                      : "hover:bg-white/[0.03]"
-                  }`}
-                >
-                  {/* Checkbox */}
-                  <div className={`h-4 w-4 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
-                    isSelected
-                      ? "bg-indigo-600 border-indigo-600"
-                      : "border-white/20 bg-transparent"
-                  }`}>
-                    {isSelected && (
-                      <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-
-                  {/* Image */}
-                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-slate-800 flex-shrink-0">
-                    {product.base_img_url ? (
-                      <img src={product.base_img_url} alt={product.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center">
-                        <ShoppingBag className="h-4 w-4 text-slate-600" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isSelected ? "text-indigo-200" : "text-slate-200"}`}>
-                      {product.name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-slate-500">{product.sku}</span>
-                      <span className="text-slate-700">·</span>
-                      <span className="text-xs text-slate-500 capitalize">{product.category}</span>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <span className="text-sm font-semibold text-white flex-shrink-0">
-                    ₹{product.sale_price?.toLocaleString("en-IN")}
-                  </span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── Section — OUTSIDE component to prevent remount on every keystroke ─────────
+// ─── Section — OUTSIDE component (stable ref = no focus loss on keystroke) ────
 const Section = ({
   value, label, children,
 }: {
-  value: string; label: string; children: React.ReactNode;
+  value: string;
+  label: string;
+  children: React.ReactNode;
 }) => (
   <AccordionItem value={value} className="border-white/8">
     <AccordionTrigger className="text-white hover:text-white hover:no-underline py-4 px-6 text-sm font-medium">
@@ -257,10 +87,12 @@ const RichSection = ({
   </div>
 );
 
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormProps) => {
-  const params   = useParams<{ id: string }>();
-  const id       = propId ?? params.id ?? "";
-  const navigate = useNavigate();
+  const params      = useParams<{ id: string }>();
+  const id          = propId ?? params.id ?? "";
+  const navigate    = useNavigate();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState<GemstoneFormData>({
@@ -269,9 +101,10 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
     specifications: "", faqs: "", curiousFacts: "",
     featured: false, imageUrl: "", newImage: null, attachedProducts: [],
   });
+
   const [imagePreview, setImagePreview] = useState<string>("");
 
-  // ── Fetch existing data ──────────────────────────────────────────────────────
+  // ── Fetch existing gemstone ──────────────────────────────────────────────────
   const { isLoading } = useQuery(
     ["gemstone-edit", id],
     async () => {
@@ -284,24 +117,25 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
       onSuccess: (data: any) => {
         setFormData({
           id:             data.id,
-          name:           data.name            || "",
+          name:           data.name           || "",
           alternateNames: Array.isArray(data.alternateNames)
-            ? (data.alternateNames?.length > 0 ? data.alternateNames : [""])
+            ? (data.alternateNames.length > 0 ? data.alternateNames : [""])
             : data.alternateNames
-              ? JSON.parse(data.alternateNames)
+              ? JSON.parse(data.alternateNames as string)
               : [""],
-          shortBenefits:  data.shortBenefits   || "",
-          description:    data.description     || "",
-          whoShouldWear:  data.whoShouldWear    || "",
-          benefits:       data.benefits        || "",
-          prices:         data.prices          || "",
-          quality:        data.quality         || "",
-          specifications: data.specifications  || "",
-          faqs:           data.faqs            || "",
-          curiousFacts:   data.curiousFacts    || "",
+          shortBenefits:  data.shortBenefits  || "",
+          description:    data.description    || "",
+          whoShouldWear:  data.whoShouldWear   || "",
+          benefits:       data.benefits       || "",
+          prices:         data.prices         || "",
+          quality:        data.quality        || "",
+          specifications: data.specifications || "",
+          faqs:           data.faqs           || "",
+          curiousFacts:   data.curiousFacts   || "",
           featured:       Boolean(data.featured),
-          imageUrl:       data.imageUrl        || "",
+          imageUrl:       data.imageUrl       || "",
           newImage:       null,
+          attachedProducts: Array.isArray(data.attachedProducts) ? data.attachedProducts : [],
         });
         if (data.imageUrl) setImagePreview(data.imageUrl);
       },
@@ -309,8 +143,8 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
   );
 
   // ── Update mutation ──────────────────────────────────────────────────────────
-  const updateMutation = useMutation({
-    mutationFn: async () => {
+  const updateMutation = useMutation(
+    async () => {
       const fd = new FormData();
       fd.append("name",           formData.name.trim());
       fd.append("description",    formData.description.trim());
@@ -322,12 +156,11 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
       fd.append("specifications", formData.specifications.trim());
       fd.append("faqs",           formData.faqs.trim());
       fd.append("curiousFacts",   formData.curiousFacts.trim());
-      fd.append("featured",       formData.featured.toString());
+      fd.append("featured",       String(formData.featured));
       fd.append("alternateNames", JSON.stringify(
         formData.alternateNames.map(n => n.trim()).filter(Boolean)
       ));
       if (formData.newImage) fd.append("image", formData.newImage);
-      fd.append("attachedProducts", JSON.stringify(formData.attachedProducts));
 
       const res = await fetch(
         `${import.meta.env.VITE_PROXY_URL}/gemstones/${id}`,
@@ -339,19 +172,21 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
       }
       return res.json();
     },
-    onSuccess: () => {
-      toast.success("Gemstone updated successfully!", { position: "bottom-right" });
-      queryClient.invalidateQueries(["gemstone-edit", id]);
-      queryClient.invalidateQueries(["get-gem-details", id]);
-      queryClient.invalidateQueries("get-all-gems");
-      onSuccess?.();
-      navigate("/home/gemblogs");
-    },
-    onError: (e: any) => toast.error(e.message || "Failed to update", { position: "bottom-right" }),
-  });
+    {
+      onSuccess: () => {
+        toast.success("Gemstone updated successfully!", { position: "bottom-right" });
+        queryClient.invalidateQueries(["gemstone-edit", id]);
+        queryClient.invalidateQueries(["get-gem-details", id]);
+        queryClient.invalidateQueries("get-all-gems");
+        onSuccess?.();
+        navigate("/home/gemblogs");
+      },
+      onError: (e: Error) => { toast.error(e.message || "Failed to update", { position: "bottom-right" }); },
+    }
+  );
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
-  const set = (field: keyof GemstoneFormData, val: any) =>
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const set = <K extends keyof GemstoneFormData>(field: K, val: GemstoneFormData[K]) =>
     setFormData(p => ({ ...p, [field]: val }));
 
   const handleAlternateNameChange = (index: number, value: string) => {
@@ -378,7 +213,7 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
     updateMutation.mutate();
   };
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
@@ -426,7 +261,6 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
 
       <div className="max-w-4xl mx-auto px-6 pt-8">
 
-        {/* Page heading */}
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-white">Edit Gemstone</h1>
           <p className="text-slate-400 text-sm mt-1">Update the gemstone blog information</p>
@@ -436,11 +270,10 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
           <div className="bg-slate-900 border border-white/8 rounded-2xl overflow-hidden">
             <Accordion type="single" collapsible defaultValue="basic" className="w-full">
 
-              {/* ── Basic Info ──────────────────────────────────────────── */}
+              {/* Basic Info */}
               <Section value="basic" label="Basic Information">
                 <div className="space-y-5">
 
-                  {/* Name + Featured */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>
@@ -465,11 +298,9 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
                     </div>
                   </div>
 
-                  {/* Image upload */}
+                  {/* Image */}
                   <div className="space-y-3">
                     <label className={labelCls}>Gemstone Image</label>
-
-                    {/* Current / preview image */}
                     {imagePreview ? (
                       <div className="relative rounded-xl overflow-hidden border border-white/8 bg-slate-950 group">
                         <img
@@ -494,16 +325,13 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
                         <ImageIcon className="h-8 w-8 text-slate-600" />
                         <div className="text-center">
                           <p className="text-slate-400 text-sm">Click to upload image</p>
-                          <p className="text-slate-600 text-xs mt-0.5">PNG, JPG, JPEG</p>
+                          <p className="text-slate-600 text-xs mt-0.5">PNG, JPG, JPEG, WEBP</p>
                         </div>
                         <input type="file" accept="image/*" id="editImage" className="hidden" onChange={handleImageUpload} />
                       </label>
                     )}
-
                     {formData.newImage && (
-                      <p className="text-xs text-emerald-400 flex items-center gap-1.5">
-                        ✓ New image selected: {formData.newImage.name}
-                      </p>
+                      <p className="text-xs text-emerald-400">✓ New image selected: {formData.newImage.name}</p>
                     )}
                   </div>
 
@@ -536,10 +364,10 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
                           <button
                             type="button"
                             onClick={() => {
-                              if (formData.alternateNames?.length === 1) return;
+                              if (formData.alternateNames.length === 1) return;
                               set("alternateNames", formData.alternateNames.filter((_, i) => i !== index));
                             }}
-                            disabled={formData.alternateNames?.length === 1}
+                            disabled={formData.alternateNames.length === 1}
                             className="flex-shrink-0 h-10 w-10 rounded-lg bg-white/5 hover:bg-red-500/10 border border-white/8 hover:border-red-500/30 text-slate-400 hover:text-red-400 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -559,12 +387,10 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
                 </div>
               </Section>
 
-              {/* Short Benefits */}
               <Section value="shortBenefits" label="Short Benefits">
-                <RichSection title="Brief benefit summary (shown on listing page)" content={formData.shortBenefits} onChange={val => set("shortBenefits", val)} />
+                <RichSection title="Brief benefit summary" content={formData.shortBenefits} onChange={val => set("shortBenefits", val)} />
               </Section>
 
-              {/* Rich sections */}
               <Section value="wearing" label="Who Should Wear">
                 <RichSection title="Who Should Wear This Gemstone" content={formData.whoShouldWear} onChange={val => set("whoShouldWear", val)} />
               </Section>
@@ -593,23 +419,9 @@ const EditGemstoneForm = ({ gemstoneId: propId, onSuccess }: EditGemstoneFormPro
                 <RichSection title="Interesting & Curious Facts" content={formData.curiousFacts} onChange={val => set("curiousFacts", val)} />
               </Section>
 
-              {/* ── Attached Products ──────────────────────────────────── */}
-              {/* <Section value="products" label={`Attached Products${formData.attachedProducts?.length > 0 ? ` (${formData.attachedProducts?.length})` : ""}`}>
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Select products to display at the end of this gemstone blog. Visitors will see these as purchase recommendations.
-                  </p>
-                  <ProductSelector
-                    selected={formData.attachedProducts}
-                    onChange={(ids) => set("attachedProducts", ids)}
-                  />
-                </div>
-              </Section> */}
-
             </Accordion>
           </div>
 
-          {/* Submit button (bottom) */}
           <button
             type="submit"
             disabled={updateMutation.isLoading}
