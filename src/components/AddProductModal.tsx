@@ -98,10 +98,10 @@ const GEMSTONE_COLORS: Record<string, string> = {
 const caratToGrams = (c: number) => +(c * 0.2).toFixed(4);
 const caratToRatti = (c: number) => +(c * 1.11).toFixed(4);
 
-// const buildSku = (prefix: string, existing: string): string => {
-//   const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
-//   return `${prefix}-${seq}`;
-// };
+const buildSku = (prefix: string, existing: string): string => {
+  const seq = existing.match(/(\d+)$/)?.[1] ?? "001";
+  return `${prefix}-${seq}`;
+};
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
 
@@ -242,60 +242,26 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Fetch gemstones ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    const fetchGemstones = async () => {
-      setIsLoadingGemstones(true);
-      try {
-        const res = await userRequest({ url: "/gemstones/get-all-gemblogs", method: "GET" });
-        if (!res.data || !Array.isArray(res.data)) throw new Error("Invalid response");
-        const gems = res.data
-          .filter((g: GemstoneApiResponse) => g.name && !g.name.toLowerCase().includes("demo"))
-          .map((g: GemstoneApiResponse) => {
-            let alternateNames: string[] = [];
-            try {
-              if (g.alternateNames) {
-                alternateNames = Array.isArray(g.alternateNames)
-                  ? g.alternateNames
-                  : JSON.parse(g.alternateNames as string);
-              }
-            } catch { /* ignore */ }
-            return {
-              name: g.name,
-              alternateNames: alternateNames.filter(
-                (n: string) => n?.trim() && !n.toLowerCase().includes("demo")
-              ),
-            };
-          });
-        setGemstoneOptions(gems);
-      } catch {
-        toast.error("Failed to load gemstone data");
-      } finally {
-        setIsLoadingGemstones(false);
-      }
-    };
-    fetchGemstones();
-  }, []);
-
-  // All gem names: API first, then fallback from SKU map
-  const allGemstoneNames: string[] = React.useMemo(() => {
-    const fromApi = gemstoneOptions.map(g => g.name);
-    const fromMap = Object.keys(GEMSTONE_SKU_MAP).filter(k => !fromApi.includes(k));
-    return [...fromApi, ...fromMap];
-  }, [gemstoneOptions]);
-
-  // ── Fetch gemblogs for selector ─────────────────────────────────────────────
+  // ── Fetch gemblogs for the gemblog link selector only ──────────────────────
+  // Gemstone SKU dropdown uses GEMSTONE_SKU_MAP (hardcoded) — NOT the API
+  // This prevents gemblog names from leaking into the gemstone picker
   useEffect(() => {
     setLoadingGemblogs(true);
     userRequest({ url: "/gemstones", method: "GET" })
       .then(res => {
-        const list = res?.data ?? [];
-        setGemblogs(list.filter((g: any) => g.name && !g.name.toLowerCase().includes("demo"))
-          .map((g: any) => ({ id: g.id, name: g.name })));
+        const raw: any[] = res?.data ?? [];
+        const valid = raw.filter(g => g.name && !g.name.toLowerCase().includes("demo"));
+        setGemblogs(valid.map(g => ({ id: g.id, name: g.name })));
       })
       .catch(() => {})
-      .finally(() => setLoadingGemblogs(false));
+      .finally(() => {
+        setLoadingGemblogs(false);
+        setIsLoadingGemstones(false);
+      });
   }, []);
+
+  // Gemstone SKU dropdown — from GEMSTONE_SKU_MAP only, never from API gemblogs
+  const allGemstoneNames: string[] = Object.keys(GEMSTONE_SKU_MAP);
 
     const subcategoryOptions = isGemstone ? GEMSTONE_SUBCATEGORIES : JEWELRY_SUBCATEGORIES;
 
@@ -574,6 +540,33 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     }
   };
 
+  // ── Upload a single file directly to S3 via presigned PUT ─────────────────
+  // Bypasses Vercel's 4.5MB serverless body limit entirely
+  const uploadToS3 = async (file: File, field: string): Promise<string | null> => {
+    try {
+      // Step 1: get presigned PUT URL from our backend
+      const presignRes = await userRequest({
+        url: "/product/presign",
+        method: "POST",
+        data: { filename: file.name, contentType: file.type, field },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const { presignedUrl, objectKey } = presignRes.data;
+
+      // Step 2: PUT file directly to S3 (no Vercel in the middle)
+      await fetch(presignedUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      return objectKey; // raw S3 key — backend will presign on read
+    } catch (err) {
+      console.error(`Failed to upload ${field}:`, err);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const required = ["name", "category", "sale_price"];
@@ -583,27 +576,50 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
     if (dimensionString && !formData.length) { toast.error("Invalid dimensions — use L x W x H"); return; }
 
     setIsSubmitting(true);
-    const toastId = toast.loading("Creating product...", { position: "bottom-right" });
+    const toastId = toast.loading("Uploading files...", { position: "bottom-right" });
     try {
-      const certFile  = await generateCertificate();
+      // Generate certificate first
+      const certFile = await generateCertificate();
+
+      // Upload all files directly to S3 in parallel — bypasses Vercel 4.5MB limit
+      toast.loading("Uploading to S3...", { id: toastId, position: "bottom-right" });
+      const [
+        base_img_key,
+        sec_img1_key,
+        sec_img2_key,
+        cert_img_key,
+        product_video_key,
+        product_video2_key,
+        product_gif_key,
+      ] = await Promise.all([
+        formData.base_img     ? uploadToS3(formData.base_img,     "base_img")     : Promise.resolve(null),
+        formData.sec_img1     ? uploadToS3(formData.sec_img1,     "sec_img1")     : Promise.resolve(null),
+        formData.sec_img2     ? uploadToS3(formData.sec_img2,     "sec_img2")     : Promise.resolve(null),
+        certFile              ? uploadToS3(certFile,              "cert_img")     : Promise.resolve(null),
+        formData.product_vid  ? uploadToS3(formData.product_vid,  "product_vid")  : Promise.resolve(null),
+        formData.product_vid2 ? uploadToS3(formData.product_vid2, "product_vid2") : Promise.resolve(null),
+        formData.product_gif  ? uploadToS3(formData.product_gif,  "product_gif")  : Promise.resolve(null),
+      ]);
+
+      // Send only text data + S3 keys to the backend (tiny payload, no files)
+      toast.loading("Creating product...", { id: toastId, position: "bottom-right" });
       const processed = prepareData();
-      const fd = new FormData();
+      const payload: Record<string, any> = {};
       const fileKeys = ["base_img","sec_img1","sec_img2","sec_img3","product_vid","product_vid2","product_gif"];
-      Object.keys(processed).forEach(k => { if (!fileKeys.includes(k)) fd.append(k, String(processed[k])); });
-      if (processed.base_img)     fd.append("base_img",       processed.base_img);
-      if (processed.sec_img1)     fd.append("sec_img1",       processed.sec_img1);
-      if (processed.sec_img2)     fd.append("sec_img2",       processed.sec_img2);
-      if (certFile) {
-        fd.append("sec_img3",  certFile); // certificate as gallery image
-        fd.append("cert_img",  certFile); // certificate saved to cert_img_url field
-      }
-      if (processed.product_vid)  fd.append("product_video",  processed.product_vid);
-      if (processed.product_vid2) fd.append("product_video2", processed.product_vid2);
-      if (processed.product_gif)  fd.append("product_gif",    processed.product_gif);
+      Object.keys(processed).forEach(k => { if (!fileKeys.includes(k)) payload[k] = processed[k]; });
+
+      // Pass S3 keys so backend stores them (already uploaded, no file transfer needed)
+      if (base_img_key)        payload.base_img_key         = base_img_key;
+      if (sec_img1_key)        payload.sec_img1_key         = sec_img1_key;
+      if (sec_img2_key)        payload.sec_img2_key         = sec_img2_key;
+      if (cert_img_key)        payload.cert_img_key         = cert_img_key;
+      if (product_video_key)   payload.product_video_key    = product_video_key;
+      if (product_video2_key)  payload.product_video2_key   = product_video2_key;
+      if (product_gif_key)     payload.product_gif_key      = product_gif_key;
 
       await userRequest({
-        url: "/product", method: "POST", data: fd,
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        url: "/product", method: "POST", data: payload,
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
       toast.success("Product created!", { id: toastId, position: "bottom-right" });
