@@ -19,10 +19,9 @@ const Sidebar = () => {
         className={`
           group relative w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium
           transition-all duration-200 flex items-center gap-3
-          ${
-            active === item.tab_name
-              ? "bg-white/10 text-white shadow-sm before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:bg-indigo-400 before:rounded-full"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
+          ${active === item.tab_name
+            ? "bg-white/10 text-white shadow-sm before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:bg-indigo-400 before:rounded-full"
+            : "text-slate-400 hover:text-white hover:bg-white/5"
           }
         `}
       >
@@ -44,10 +43,9 @@ const Sidebar = () => {
           className={`
             group relative w-full text-left pl-9 pr-4 py-2 rounded-lg text-sm
             transition-all duration-200 flex items-center gap-2
-            ${
-              active === item.tab_name
-                ? "text-white bg-white/10 before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:h-1.5 before:w-1.5 before:bg-indigo-400 before:rounded-full"
-                : "text-slate-500 hover:text-slate-200 hover:bg-white/5 before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:h-1 before:w-1 before:bg-slate-600 before:rounded-full"
+            ${active === item.tab_name
+              ? "text-white bg-white/10 before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:h-1.5 before:w-1.5 before:bg-indigo-400 before:rounded-full"
+              : "text-slate-500 hover:text-slate-200 hover:bg-white/5 before:absolute before:left-4 before:top-1/2 before:-translate-y-1/2 before:h-1 before:w-1 before:bg-slate-600 before:rounded-full"
             }
           `}
         >
@@ -58,10 +56,10 @@ const Sidebar = () => {
 
   return (
     <aside className="
-      relative flex flex-col w-56 h-screen
-      bg-slate-900 border-r border-white/5
-      px-3 py-5 gap-1
-      before:absolute before:inset-0 before:bg-gradient-to-b before:from-indigo-950/30 before:to-transparent before:pointer-events-none
+       relative flex flex-col w-56 h-full
+  bg-slate-900 border-r border-white/5
+  px-3 py-5 gap-1
+  before:absolute before:inset-0 before:bg-gradient-to-b before:from-indigo-950/30 before:to-transparent before:pointer-events-none
     ">
       {/* Logo / Brand */}
       <div className="px-4 pb-5 mb-1 border-b border-white/5">
@@ -75,7 +73,7 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-0.5 flex-1">
-        {tabs.map((item:any) =>
+        {tabs.map((item: any) =>
           item.type === "accordion" ? (
             <Accordion
               key={item.tab_name}
@@ -89,10 +87,9 @@ const Sidebar = () => {
                     group w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium
                     transition-all duration-200 flex items-center gap-3
                     hover:no-underline [&>svg]:hidden
-                    ${
-                      item.items?.some((i: any) => i.tab_name === active)
-                        ? "text-white bg-white/5"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ${item.items?.some((i: any) => i.tab_name === active)
+                      ? "text-white bg-white/5"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                     }
                   `}
                 >
@@ -120,7 +117,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div className="pt-3 border-t border-white/5">
+      {/* <div className="pt-3 border-t border-white/5">
         <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
           <div className="h-7 w-7 rounded-full bg-slate-700 ring-1 ring-white/10 flex items-center justify-center flex-shrink-0">
             <span className="text-slate-300 text-xs font-medium">U</span>
@@ -130,7 +127,7 @@ const Sidebar = () => {
             <span className="text-slate-500 text-xs truncate">user@email.com</span>
           </div>
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 };

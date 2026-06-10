@@ -31,10 +31,10 @@ import PoojaMetalOptions from './pages/Pooja_and_Metal/PoojaMetalOptions'
 import OrderDetails from "./pages/Orders/OrderDetails";
 import { useSelector } from "react-redux";
 
-const ThemeContext = createContext({ theme: "light", toggleTheme: () => {} });
+const ThemeContext = createContext({ theme: "light", toggleTheme: () => { } });
 
 function App() {
-  const userType = useSelector((state:any) => state.user.userType);
+  const userType = useSelector((state: any) => state.user.userType);
   // const userType = "admin"
 
 
@@ -48,28 +48,30 @@ function App() {
     theme,
     toggleTheme,
   };
+  // App.tsx — only the Layout component changes
 
   const Layout = () => {
-
-    if(!userType){
-      redirect('/')
+    if (!userType) {
+      redirect('/');
     }
- 
 
-    
     return (
       <ThemeContext.Provider value={value}>
-        <div className="h-screen overflow-hidden shadow-md roboto-regular ">
-          <div className="">
-            <Navbar />
-          </div>
-          <div className="flex flex-1 ">
-            <div className="sidebar w-1/10 h-screen shadow-md overflow-auto">
+        <div className="h-screen flex flex-col overflow-hidden">
+          {/* Navbar — fixed 56px (h-14) */}
+          <Navbar />
+
+          {/* Below navbar — fills remaining height */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Sidebar — scrolls independently */}
+            <aside className="w-56 flex-shrink-0 overflow-y-auto overflow-x-hidden">
               <Sidebar />
-            </div>
-            <div className="flex-1 h-screen overflow-auto">
+            </aside>
+
+            {/* Main content — scrolls independently */}
+            <main className="flex-1 overflow-y-auto bg-slate-950">
               <Outlet />
-            </div>
+            </main>
           </div>
         </div>
       </ThemeContext.Provider>
@@ -79,7 +81,7 @@ function App() {
   const router = createBrowserRouter([
     {
       path: "/home",
-      element: userType ? <Layout /> : <Login/>,
+      element: userType ? <Layout /> : <Login />,
       children: [
         {
           path: "/home/dashboard",
@@ -159,9 +161,9 @@ function App() {
         },
         {
           path: "/home/pooja-metal",
-          element: < PoojaMetalOptions/>,
+          element: < PoojaMetalOptions />,
         },
-        
+
       ],
     },
     {
@@ -173,7 +175,7 @@ function App() {
       path: "/",
       element: <Login />,
     },
-    
+
   ]);
 
   return <RouterProvider router={router} />;

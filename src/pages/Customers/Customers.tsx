@@ -1,77 +1,16 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
-  Search,
-  Filter,
-  UserPlus,
-  MessageSquare,
-  Phone,
-  Mail,
-  ExternalLink,
-  MapPin,
-  ShoppingBag,
-  Calendar,
-  Download,
-  MoreVertical,
-  Users,
-  TrendingUp,
-  DollarSign,
+  Search, Filter, UserPlus, MessageSquare, Phone,
+  Mail, ExternalLink, MapPin, ShoppingBag, Calendar,
+  Download, MoreVertical, Users, TrendingUp, DollarSign,
 } from "lucide-react";
 import { userRequest } from "@/utils/requestMethods";
 import { useSelector } from "react-redux";
 import { useQuery } from "react-query";
 
 const Customers = () => {
-  // Sample customers data - would come from your backend in a real app
-  const initialCustomers = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+1 (555) 123-4567",
-      whatsapp: "+15551234567",
-      location: "Austin, TX",
-      totalOrders: 12,
-      totalSpent: 1250.5,
-      lastPurchase: "2025-01-10",
-      status: "Active",
-      avatar: "/api/placeholder/40/40",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      phone: "+1 (555) 234-5678",
-      whatsapp: "+15552345678",
-      location: "New York, NY",
-      totalOrders: 8,
-      totalSpent: 890.75,
-      lastPurchase: "2025-01-12",
-      status: "Active",
-      avatar: "/api/placeholder/40/40",
-    },
-    // Add more sample customers as needed
-  ];
-
-  const [customers] = useState(initialCustomers);
   const [searchTerm, setSearchTerm] = useState("");
-  // const [selectedCustomer, setSelectedCustomer] = useState(null);
-
-  // Filter customers based on search term
-  // const filteredCustomers = customers.filter((customer) => {
-  //   return (
-  //     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     customer.phone.includes(searchTerm)
-  //   );
-  // });
-
-  const openWhatsApp = (whatsappNumber: any) => {
-    window.open(`https://wa.me/${whatsappNumber}`, "_blank");
-  };
-
+  const [statusFilter, setStatusFilter] = useState("All");
   const token = useSelector((state: any) => state.user.accessToken);
 
   const fetchCustomers = async () => {
@@ -85,212 +24,211 @@ const Customers = () => {
 
   const { data: employees } = useQuery("get-customers", fetchCustomers);
 
-  console.log("EMPLOYEES : ", employees);
+  const openWhatsApp = (number: any) =>
+    window.open(`https://wa.me/${number}`, "_blank");
+
+  const filtered = (employees ?? []).filter((c: any) => {
+    const name  = `${c.firstname} ${c.lastname}`.toLowerCase();
+    const match = !searchTerm ||
+      name.includes(searchTerm.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.telephone?.includes(searchTerm);
+    const status = statusFilter === "All" || c.status === statusFilter;
+    return match && status;
+  });
+
+  const avgSpent = employees?.length
+    ? (employees.reduce((a: number, c: any) => a + (c.totalSpent ?? 0), 0) / employees.length).toFixed(2)
+    : "0.00";
+
+  const stats = [
+    { label: "Total Customers", value: employees?.length ?? 0,  icon: <Users className="h-4 w-4" />,      accent: "text-indigo-400", bg: "bg-indigo-500/10" },
+    { label: "Avg Purchase",    value: `₹${avgSpent}`,           icon: <DollarSign className="h-4 w-4" />, accent: "text-teal-400",   bg: "bg-teal-500/10"   },
+    { label: "Customer Growth", value: "+12.5%",                 icon: <TrendingUp className="h-4 w-4" />, accent: "text-violet-400", bg: "bg-violet-500/10" },
+  ];
+
+  const selectClass = `
+    px-3 py-2 rounded-lg text-sm text-slate-300
+    bg-[#0f0f1e] border border-[#1e1e3a]
+    focus:outline-none focus:border-indigo-500/50 transition-colors
+  `;
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-[#07070f] min-h-screen">
+
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <div>
+          <h1 className="text-xl font-semibold text-slate-100">Customers</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Manage your customer base</p>
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 bg-[#0f0f1e] border border-[#1e1e3a] hover:bg-white/5 transition-colors">
             <Download className="h-4 w-4" />
             Export
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <UserPlus className="h-4 w-4 mr-2" />
+          </button>
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+            <UserPlus className="h-4 w-4" />
             Add Customer
-          </Button>
+          </button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Customers</p>
-                <p className="text-2xl font-bold">{employees?.length}</p>
-              </div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-2xl bg-[#0f0f1e] border border-[#1e1e3a] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">{s.label}</span>
+              <span className={`p-2 rounded-lg ${s.bg} ${s.accent}`}>{s.icon}</span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-green-100 rounded-full">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Average Purchase</p>
-                <p className="text-2xl font-bold">
-                  $
-                  {(
-                    customers.reduce((acc, cur) => acc + cur.totalSpent, 0) /
-                    customers.length
-                  )}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-purple-100 rounded-full">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Customer Growth</p>
-                <p className="text-2xl font-bold">+12.5%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <p className={`text-2xl font-semibold ${s.accent}`}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search customers by name, email, or phone..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-4">
-              <select className="px-4 py-2 border rounded-md">
-                <option>All Statuses</option>
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                More Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Search by name, email or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-4 py-2 w-full rounded-lg text-sm text-slate-300 bg-[#0f0f1e] border border-[#1e1e3a] placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 transition-colors"
+          />
+        </div>
+        <select className={selectClass} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="All">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+        <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 bg-[#0f0f1e] border border-[#1e1e3a] hover:bg-white/5 transition-colors">
+          <Filter className="h-4 w-4" />
+          More Filters
+        </button>
+      </div>
 
-      {/* Customers List */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Customer
+      {/* Table */}
+      <div className="rounded-2xl bg-[#0f0f1e] border border-[#1e1e3a] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#1e1e3a]">
+          <h2 className="text-sm font-semibold text-slate-100">
+            All Customers
+            <span className="ml-2 text-xs font-normal text-slate-500">({filtered.length})</span>
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#1e1e3a]">
+                {["Customer", "Contact", "Location", "Orders", "Total Spent", "Last Purchase", "Actions"].map((h) => (
+                  <th key={h} className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    {h}
                   </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Orders
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Total Spent
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Last Purchase
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {employees?.map((customer:any) => (
-                  <tr key={customer?.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={customer?.avatar}
-                          alt={customer?.firstname}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <div>
-                          <p className="font-medium">{customer?.firstname + " " + customer?.lastname}</p>
-                          <p className="text-sm text-gray-500">
-                            ID: #{customer?.id}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          {customer?.email}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          {customer.telephone}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-gray-400" />
-                        {customer?.location}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <ShoppingBag className="h-4 w-4 text-gray-400" />
-                        {customer?.totalOrders}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium">
-                        ${customer?.totalSpent}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        {new Date(customer?.lastPurchase).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700"
-                          onClick={() => openWhatsApp(customer?.telephone)}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1e1e3a]">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-16 text-slate-600 text-sm">
+                    No customers found
+                  </td>
+                </tr>
+              ) : filtered.map((customer: any) => (
+                <tr key={customer?.id} className="hover:bg-white/[0.02] transition-colors">
+
+                  {/* Customer */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-indigo-400 text-xs font-medium">
+                          {customer?.firstname?.[0]}{customer?.lastname?.[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-200">
+                          {customer?.firstname} {customer?.lastname}
+                        </p>
+                        <p className="text-xs text-slate-500">#{customer?.id}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Contact */}
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <Mail className="h-3.5 w-3.5 text-slate-600" />
+                        {customer?.email}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <Phone className="h-3.5 w-3.5 text-slate-600" />
+                        {customer?.telephone}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Location */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <MapPin className="h-3.5 w-3.5 text-slate-600" />
+                      {customer?.location ?? "—"}
+                    </div>
+                  </td>
+
+                  {/* Orders */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                      <ShoppingBag className="h-3.5 w-3.5 text-slate-600" />
+                      {customer?.totalOrders ?? "—"}
+                    </div>
+                  </td>
+
+                  {/* Total Spent */}
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-semibold text-teal-400">
+                      ₹{customer?.totalSpent ?? "0"}
+                    </span>
+                  </td>
+
+                  {/* Last Purchase */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                      <Calendar className="h-3.5 w-3.5 text-slate-600" />
+                      {customer?.lastPurchase
+                        ? new Date(customer.lastPurchase).toLocaleDateString()
+                        : "—"}
+                    </div>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openWhatsApp(customer?.telephone)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-colors"
+                        title="WhatsApp"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors">
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

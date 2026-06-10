@@ -1,260 +1,226 @@
-// import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Calendar, Filter, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 const Analytics = () => {
-  // Sample data representing user engagement metrics over time
   const engagementData = [
-    { date: '2024-01-01', activeUsers: 1200, sessionDuration: 15, bounceRate: 35, conversions: 45 },
-    { date: '2024-01-02', activeUsers: 1350, sessionDuration: 17, bounceRate: 32, conversions: 52 },
-    { date: '2024-01-03', activeUsers: 1100, sessionDuration: 14, bounceRate: 38, conversions: 40 },
-    { date: '2024-01-04', activeUsers: 1400, sessionDuration: 16, bounceRate: 30, conversions: 55 },
-    { date: '2024-01-05', activeUsers: 1600, sessionDuration: 18, bounceRate: 28, conversions: 65 },
-    { date: '2024-01-06', activeUsers: 1450, sessionDuration: 16, bounceRate: 31, conversions: 58 },
-    { date: '2024-01-07', activeUsers: 1300, sessionDuration: 15, bounceRate: 33, conversions: 48 }
+    { date: 'Jan 1', activeUsers: 1200, conversions: 45 },
+    { date: 'Jan 2', activeUsers: 1350, conversions: 52 },
+    { date: 'Jan 3', activeUsers: 1100, conversions: 40 },
+    { date: 'Jan 4', activeUsers: 1400, conversions: 55 },
+    { date: 'Jan 5', activeUsers: 1600, conversions: 65 },
+    { date: 'Jan 6', activeUsers: 1450, conversions: 58 },
+    { date: 'Jan 7', activeUsers: 1300, conversions: 48 },
   ];
 
-  // Sample customer journey data
   const journeyData = [
-    { stage: 'Awareness', users: 1000, conversion: 60 },
-    { stage: 'Consideration', users: 600, conversion: 50 },
-    { stage: 'Decision', users: 300, conversion: 40 },
-    { stage: 'Purchase', users: 120, conversion: 30 },
-    { stage: 'Retention', users: 90, conversion: 75 }
+    { stage: 'Awareness',      users: 1000, conversion: 60 },
+    { stage: 'Consideration',  users: 600,  conversion: 50 },
+    { stage: 'Decision',       users: 300,  conversion: 40 },
+    { stage: 'Purchase',       users: 120,  conversion: 30 },
+    { stage: 'Retention',      users: 90,   conversion: 75 },
   ];
 
-  // Sample cohort retention data
   const cohortData = [
     { month: 'Month 1', retention: 100, users: 500 },
-    { month: 'Month 2', retention: 65, users: 325 },
-    { month: 'Month 3', retention: 45, users: 225 },
-    { month: 'Month 4', retention: 35, users: 175 },
-    { month: 'Month 5', retention: 28, users: 140 },
-    { month: 'Month 6', retention: 25, users: 125 }
+    { month: 'Month 2', retention: 65,  users: 325 },
+    { month: 'Month 3', retention: 45,  users: 225 },
+    { month: 'Month 4', retention: 35,  users: 175 },
+    { month: 'Month 5', retention: 28,  users: 140 },
+    { month: 'Month 6', retention: 25,  users: 125 },
   ];
 
-  // Predictive metrics showing forecasted values
   const predictiveMetrics = [
-    { name: 'Expected Revenue', current: 58000, predicted: 64000, trend: 'up', confidence: 85 },
-    { name: 'Customer Churn', current: 5.2, predicted: 4.8, trend: 'down', confidence: 78 },
-    { name: 'Average Order Value', current: 175, predicted: 190, trend: 'up', confidence: 82 },
-    { name: 'Customer Acquisition Cost', current: 28, predicted: 25, trend: 'down', confidence: 75 }
+    { name: 'Expected Revenue',        current: '$58,000', predicted: '$64,000', trend: 'up',   confidence: 85, accent: 'text-indigo-400', bg: 'bg-indigo-500/10', bar: 'bg-indigo-500' },
+    { name: 'Customer Churn',          current: '5.2%',    predicted: '4.8%',    trend: 'down', confidence: 78, accent: 'text-teal-400',   bg: 'bg-teal-500/10',   bar: 'bg-teal-500'   },
+    { name: 'Avg Order Value',         current: '$175',     predicted: '$190',    trend: 'up',   confidence: 82, accent: 'text-violet-400', bg: 'bg-violet-500/10', bar: 'bg-violet-500' },
+    { name: 'Customer Acq. Cost',      current: '$28',      predicted: '$25',     trend: 'down', confidence: 75, accent: 'text-orange-400', bg: 'bg-orange-500/10', bar: 'bg-orange-500' },
   ];
 
-  // const [selectedTimeframe, setSelectedTimeframe] = useState('7days');
-  // const [activeMetric, setActiveMetric] = useState('activeUsers');
+  const behaviorRows = [
+    { pattern: 'Cart Abandonment Recovery', users: '2,450', conversion: '23.5%', impact: '+$12,800' },
+    { pattern: 'Cross-sell Acceptance',     users: '1,840', conversion: '31.2%', impact: '+$8,900'  },
+    { pattern: 'Repeat Purchase Pattern',   users: '3,120', conversion: '42.8%', impact: '+$15,600' },
+    { pattern: 'New Feature Adoption',      users: '4,280', conversion: '18.9%', impact: '+$6,400'  },
+  ];
+
+  const tooltipStyle = {
+    backgroundColor: '#0f0f1e',
+    border: '1px solid #1e1e3a',
+    borderRadius: '8px',
+    color: '#e2e8f0',
+    fontSize: '12px',
+  };
+
+  const axisProps = { fill: '#64748b', fontSize: 12 };
+
+  const ChartCard = ({ title, legend, children }: { title: string; legend?: React.ReactNode; children: React.ReactNode }) => (
+    <div className="rounded-2xl bg-[#0f0f1e] border border-[#1e1e3a] overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e3a]">
+        <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
+        {legend}
+      </div>
+      <div className="p-6 h-72">{children}</div>
+    </div>
+  );
+
+  const Legend = ({ items }: { items: { label: string; color: string }[] }) => (
+    <div className="flex items-center gap-4 text-xs text-slate-500">
+      {items.map(i => (
+        <span key={i.label} className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full inline-block" style={{ background: i.color }} />
+          {i.label}
+        </span>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen mb-10">
-      {/* Header Section */}
+    <div className="p-6 space-y-6 bg-[#07070f] min-h-screen">
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Advanced Analytics</h1>
-          <p className="text-gray-500">Detailed insights and predictive analysis</p>
+          <h1 className="text-xl font-semibold text-slate-100">Advanced Analytics</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Detailed insights and predictive analysis</p>
         </div>
-        
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
+        <div className="flex gap-2">
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 bg-[#0f0f1e] border border-[#1e1e3a] hover:bg-white/5 transition-colors">
             <Calendar className="h-4 w-4" />
-            <span>Last 7 Days</span>
+            Last 7 Days
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50">
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 bg-[#0f0f1e] border border-[#1e1e3a] hover:bg-white/5 transition-colors">
             <Filter className="h-4 w-4" />
-            <span>Filter Data</span>
+            Filter Data
           </button>
         </div>
       </div>
 
-      {/* Predictive Metrics Cards */}
+      {/* Predictive Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {predictiveMetrics.map((metric) => (
-          <Card key={metric.name}>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{metric.name}</p>
-                  <h3 className="text-2xl font-bold mt-1">
-                    {typeof metric.current === 'number' && metric.current % 1 === 0
-                      ? `$${metric.current.toLocaleString()}`
-                      : `${metric.current}${metric.name.includes('Churn') ? '%' : ''}`}
-                  </h3>
-                </div>
-                <div className={`p-2 rounded-full ${
-                  metric.trend === 'up' ? 'bg-green-100' : 'bg-red-100'
-                }`}>
-                  {metric.trend === 'up' 
-                    ? <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    : <ArrowDownRight className="h-4 w-4 text-red-600" />
-                  }
-                </div>
+        {predictiveMetrics.map((m) => (
+          <div key={m.name} className="rounded-2xl bg-[#0f0f1e] border border-[#1e1e3a] p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-slate-500 text-xs font-medium uppercase tracking-wider leading-tight">{m.name}</span>
+              <span className={`p-1.5 rounded-lg ${m.bg}`}>
+                {m.trend === 'up'
+                  ? <ArrowUpRight className={`h-3.5 w-3.5 ${m.accent}`} />
+                  : <ArrowDownRight className={`h-3.5 w-3.5 ${m.accent}`} />}
+              </span>
+            </div>
+            <p className={`text-2xl font-semibold ${m.accent}`}>{m.current}</p>
+            <div className="mt-3 space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-500">Predicted</span>
+                <span className="text-slate-300 font-medium">{m.predicted}</span>
               </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Predicted</span>
-                  <span className="font-medium">
-                    {typeof metric.predicted === 'number' && metric.predicted % 1 === 0
-                      ? `$${metric.predicted.toLocaleString()}`
-                      : `${metric.predicted}${metric.name.includes('Churn') ? '%' : ''}`}
-                  </span>
-                </div>
-                <div className="mt-1">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 rounded-full h-2"
-                      style={{ width: `${metric.confidence}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{metric.confidence}% confidence</p>
-                </div>
+              <div className="w-full bg-[#1e1e3a] rounded-full h-1.5">
+                <div className={`${m.bar} rounded-full h-1.5 transition-all`} style={{ width: `${m.confidence}%` }} />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-slate-600">{m.confidence}% confidence</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* User Engagement Trends */}
-      <Card>
-        <CardHeader>
-          <CardTitle>User Engagement Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={engagementData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="activeUsers" 
-                  stroke="#3b82f6" 
-                  fill="#3b82f6" 
-                  fillOpacity={0.1} 
-                  name="Active Users"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="conversions" 
-                  stroke="#10b981" 
-                  fill="#10b981" 
-                  fillOpacity={0.1}
-                  name="Conversions"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Engagement Trends */}
+      <ChartCard
+        title="User Engagement Trends"
+        legend={<Legend items={[{ label: 'Active Users', color: '#818cf8' }, { label: 'Conversions', color: '#2dd4bf' }]} />}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={engagementData}>
+            <defs>
+              <linearGradient id="gUsers" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#818cf8" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gConv" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#2dd4bf" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e1e3a" />
+            <XAxis dataKey="date"        tick={axisProps} axisLine={false} tickLine={false} />
+            <YAxis                        tick={axisProps} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Area type="monotone" dataKey="activeUsers"  stroke="#818cf8" strokeWidth={2} fill="url(#gUsers)" name="Active Users" />
+            <Area type="monotone" dataKey="conversions"  stroke="#2dd4bf" strokeWidth={2} fill="url(#gConv)"  name="Conversions"  />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
+      {/* Journey + Cohort */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Customer Journey Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer Journey Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={journeyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="stage" />
-                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
-                  <Tooltip />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="users" fill="#3b82f6" name="Users" />
-                  <Bar yAxisId="right" dataKey="conversion" fill="#10b981" name="Conversion %" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Customer Journey Analysis"
+          legend={<Legend items={[{ label: 'Users', color: '#818cf8' }, { label: 'Conversion %', color: '#2dd4bf' }]} />}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={journeyData} barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e3a" />
+              <XAxis dataKey="stage"     tick={axisProps} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left"  orientation="left"  tick={axisProps} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={axisProps} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar yAxisId="left"  dataKey="users"      fill="#818cf8" radius={[4,4,0,0]} name="Users" />
+              <Bar yAxisId="right" dataKey="conversion" fill="#2dd4bf" radius={[4,4,0,0]} name="Conversion %" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-        {/* Cohort Retention Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cohort Retention Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={cohortData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="retention" 
-                    stroke="#3b82f6" 
-                    name="Retention %"
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="users" 
-                    stroke="#10b981" 
-                    name="Active Users"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Cohort Retention Analysis"
+          legend={<Legend items={[{ label: 'Retention %', color: '#818cf8' }, { label: 'Active Users', color: '#fb923c' }]} />}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={cohortData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e1e3a" />
+              <XAxis dataKey="month"     tick={axisProps} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left"  orientation="left"  tick={axisProps} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={axisProps} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Line yAxisId="left"  type="monotone" dataKey="retention" stroke="#818cf8" strokeWidth={2} dot={false} name="Retention %" />
+              <Line yAxisId="right" type="monotone" dataKey="users"     stroke="#fb923c" strokeWidth={2} dot={false} name="Active Users" />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
-      {/* Behavioral Insights Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>User Behavior Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Behavior Pattern</th>
-                  <th className="text-right py-3 px-4">Users</th>
-                  <th className="text-right py-3 px-4">Conversion Rate</th>
-                  <th className="text-right py-3 px-4">Revenue Impact</th>
+      {/* Behavior Table */}
+      <div className="rounded-2xl bg-[#0f0f1e] border border-[#1e1e3a] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#1e1e3a]">
+          <h2 className="text-sm font-semibold text-slate-100">User Behavior Insights</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#1e1e3a]">
+                {["Behavior Pattern", "Users", "Conversion Rate", "Revenue Impact"].map((h, i) => (
+                  <th key={h} className={`px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider ${i === 0 ? "text-left" : "text-right"}`}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1e1e3a]">
+              {behaviorRows.map((r) => (
+                <tr key={r.pattern} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-6 py-4 text-sm text-slate-300">{r.pattern}</td>
+                  <td className="px-6 py-4 text-sm text-slate-400 text-right">{r.users}</td>
+                  <td className="px-6 py-4 text-sm text-indigo-400 font-medium text-right">{r.conversion}</td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="inline-flex items-center justify-end gap-1 text-xs font-medium text-teal-400">
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                      {r.impact}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y">
-                <tr>
-                  <td className="py-3 px-4">Cart Abandonment Recovery</td>
-                  <td className="text-right py-3 px-4">2,450</td>
-                  <td className="text-right py-3 px-4">23.5%</td>
-                  <td className="text-right py-3 px-4 text-green-600">+$12,800</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4">Cross-sell Acceptance</td>
-                  <td className="text-right py-3 px-4">1,840</td>
-                  <td className="text-right py-3 px-4">31.2%</td>
-                  <td className="text-right py-3 px-4 text-green-600">+$8,900</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4">Repeat Purchase Pattern</td>
-                  <td className="text-right py-3 px-4">3,120</td>
-                  <td className="text-right py-3 px-4">42.8%</td>
-                  <td className="text-right py-3 px-4 text-green-600">+$15,600</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4">New Feature Adoption</td>
-                  <td className="text-right py-3 px-4">4,280</td>
-                  <td className="text-right py-3 px-4">18.9%</td>
-                  <td className="text-right py-3 px-4 text-green-600">+$6,400</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   );
 };
