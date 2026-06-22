@@ -93,7 +93,7 @@ const OrderDetails = () => {
 
   const getOrderDetails = () => {
       return userRequest({
-        url: `/order/get-order/${orderId}`,
+        url: `order/get-order/${orderId}`,
         method: "get",
         
       });

@@ -13,7 +13,7 @@ const Orders = () => {
   const navigateTo = useNavigate();
 
   const getAllOrders = () =>
-    userRequest({ url: `/order/get-all-orders/`, method: "get" });
+    userRequest({ url: `order/get-all-orders`, method: "get" });
 
   const { data: allOrders } = useQuery("get-all-orders", getAllOrders, {
     onError: (error: any) => console.log(error),
@@ -44,9 +44,10 @@ const Orders = () => {
   const orders = allOrders?.data ?? [];
 
   const filtered = orders.filter((o: any) => {
+    const fullName = `${o.user?.firstname ?? ""} ${o.user?.lastname ?? ""}`.toLowerCase().trim();
     const matchSearch = !searchTerm ||
       o.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.userId?.toLowerCase().includes(searchTerm.toLowerCase());
+      fullName.includes(searchTerm.toLowerCase());
     const matchStatus = statusFilter === "All" || o.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -119,16 +120,16 @@ const Orders = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#1e1e3a]">
-                {["Order ID", "Customer", "Date", "Total", "Status", "Actions"].map((h, i) => (
+                {["Order ID", "Customer Name", "Customer", "Date", "Total", "Status", "Actions"].map((h, i) => (
                   <th
                     key={h}
                     className={`px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider ${
-                      i >= 3 ? "text-right" : "text-left"
+                      i >= 4 ? "text-right" : "text-left"
                     } ${h === "Status" ? "text-center" : ""}`}
                   >
-                    <div className={`flex items-center gap-1 ${i >= 3 ? "justify-end" : ""} ${h === "Status" ? "justify-center" : ""}`}>
+                    <div className={`flex items-center gap-1 ${i >= 4 ? "justify-end" : ""} ${h === "Status" ? "justify-center" : ""}`}>
                       {h}
-                      {["Order ID", "Customer", "Date"].includes(h) && (
+                      {["Order ID", "Customer Name", "Date"].includes(h) && (
                         <ArrowUpDown className="h-3 w-3 text-slate-600" />
                       )}
                     </div>
@@ -154,11 +155,27 @@ const Orders = () => {
                         <span className="p-1.5 rounded-lg bg-indigo-500/10">
                           <Package className="h-3.5 w-3.5 text-indigo-400" />
                         </span>
-                        <span className="text-sm font-medium text-slate-200">{order?.id}</span>
+                        <span title={order?.id} className="text-sm font-medium text-slate-200 font-mono cursor-default">
+                          {order?.id?.slice(0, 8)}…
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-slate-200">{order?.userId}</p>
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                          <span className="text-indigo-400 text-xs font-medium">
+                            {order?.user?.firstname?.[0]}{order?.user?.lastname?.[0]}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-200">
+                          {order?.user?.firstname} {order?.user?.lastname}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p title={order?.userId} className="text-xs font-medium text-slate-400 font-mono cursor-default">
+                        {order?.userId?.slice(0, 8)}…
+                      </p>
                       <p className="text-xs text-slate-500 mt-0.5">{order?.payment_method}</p>
                     </td>
                     <td className="px-6 py-4">
