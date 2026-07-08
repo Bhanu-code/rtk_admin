@@ -135,19 +135,19 @@ const OfferAdminPanel = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-[#020617] min-h-screen">
+    <div className="p-4 sm:p-6 space-y-6 bg-[#020617] min-h-screen">
       <Card className="border-white/10 bg-slate-900">
         <CardHeader>
-          <CardTitle className="text-2xl text-white">Navbar Offer Management</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl text-white">Navbar Offer Management</CardTitle>
           <CardDescription className="text-slate-400">
             Manage promotional offers shown in the navigation bar
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 px-4 sm:px-6">
           {/* Error Message */}
           {error instanceof Error && (
             <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl">
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               Failed to load offers. Please refresh the page.
             </div>
           )}
@@ -168,7 +168,7 @@ const OfferAdminPanel = () => {
                   className="min-h-[80px] bg-slate-900 border-white/10 text-white placeholder:text-slate-500 resize-none"
                 />
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Switch
                       checked={newOffer.isActive}
@@ -180,7 +180,7 @@ const OfferAdminPanel = () => {
                   <Button
                     onClick={handleAddOffer}
                     disabled={!newOffer.content.trim() || isSubmitting}
-                    className="bg-indigo-600 hover:bg-indigo-500"
+                    className="bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     {isSubmitting ? "Adding..." : "Add Offer"}
@@ -192,15 +192,15 @@ const OfferAdminPanel = () => {
 
           {/* Offers Table */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Active Offers ({offers.length})</h3>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-white">Active Offers ({offers.length})</h3>
               <Button variant="outline" size="sm" onClick={() => refetch()}>
                 Refresh
               </Button>
             </div>
 
-            <div className="border border-white/10 rounded-2xl overflow-hidden bg-slate-900">
-              <Table>
+            <div className="border border-white/10 rounded-2xl overflow-x-auto bg-slate-900">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="text-slate-300">Offer Content</TableHead>
@@ -261,7 +261,7 @@ const OfferAdminPanel = () => {
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-end gap-1 flex-wrap">
                             {editOffer?.id === offer.id ? (
                               <>
                                 <Button
@@ -308,6 +308,7 @@ const OfferAdminPanel = () => {
                 </TableBody>
               </Table>
             </div>
+            <p className="text-xs text-slate-600 mt-2 sm:hidden">Swipe left/right to see all columns</p>
           </div>
         </CardContent>
       </Card>

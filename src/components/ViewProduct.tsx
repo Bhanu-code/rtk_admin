@@ -43,22 +43,22 @@ const SectionCard = ({
   children: React.ReactNode;
 }) => (
   <div className="rounded-2xl overflow-hidden" style={{ background: bg.card, border: border.subtle }}>
-    <div className="flex items-center gap-3 px-6 py-4" style={{ borderBottom: border.subtle }}>
+    <div className="flex items-center gap-3 px-4 sm:px-6 py-4" style={{ borderBottom: border.subtle }}>
       {Icon && (
-        <div className="p-2 rounded-lg" style={{ background: "rgba(99,102,241,0.12)" }}>
+        <div className="p-2 rounded-lg flex-shrink-0" style={{ background: "rgba(99,102,241,0.12)" }}>
           <Icon className="h-4 w-4" style={{ color: "#818cf8" }} />
         </div>
       )}
       <h3 className="text-sm font-semibold" style={{ color: text.primary }}>{title}</h3>
     </div>
-    <div className="p-6">{children}</div>
+    <div className="p-4 sm:p-6">{children}</div>
   </div>
 );
 
 const FieldRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div>
+  <div className="min-w-0">
     <p className="text-xs font-medium mb-1" style={{ color: text.muted }}>{label}</p>
-    <p className="text-sm" style={{ color: text.primary }}>{value || '—'}</p>
+    <p className="text-sm break-words" style={{ color: text.primary }}>{value || '—'}</p>
   </div>
 );
 
@@ -96,7 +96,7 @@ const ViewProduct = () => {
         <img
           src={imageUrl}
           alt="Full size"
-          className="w-full rounded-2xl shadow-2xl"
+          className="w-full rounded-2xl shadow-2xl max-h-[85vh] object-contain"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = '/placeholder-image.png';
           }}
@@ -151,7 +151,7 @@ const ViewProduct = () => {
           <img
             src={src}
             alt={alt}
-            className="w-full h-64 object-contain bg-slate-950 transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-40 sm:h-56 md:h-64 object-contain bg-slate-950 transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = '/placeholder-image.png';
             }}
@@ -165,7 +165,7 @@ const ViewProduct = () => {
           </div>
         </>
       ) : (
-        <div className="h-64 flex flex-col items-center justify-center gap-3" style={{ background: bg.surface }}>
+        <div className="h-40 sm:h-56 md:h-64 flex flex-col items-center justify-center gap-3" style={{ background: bg.surface }}>
           <ImageIcon className="h-10 w-10" style={{ color: text.muted }} />
           <span className="text-xs" style={{ color: text.muted }}>No image available</span>
         </div>
@@ -175,7 +175,7 @@ const ViewProduct = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen" style={{ background: bg.page }}>
+      <div className="flex justify-center items-center h-screen px-4" style={{ background: bg.page }}>
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-500" />
           <p style={{ color: text.muted }}>Loading product details...</p>
@@ -186,7 +186,7 @@ const ViewProduct = () => {
 
   if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4" style={{ background: bg.page }}>
+      <div className="flex flex-col items-center justify-center h-screen gap-4 px-4 text-center" style={{ background: bg.page }}>
         <AlertCircle className="h-12 w-12 text-red-500" />
         <p className="text-xl font-medium text-red-400">Product not found</p>
       </div>
@@ -194,37 +194,37 @@ const ViewProduct = () => {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ background: bg.page }}>
+    <div className="min-h-screen p-4 sm:p-6" style={{ background: bg.page }}>
       {selectedImage && <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />}
 
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               onClick={() => navigate(-1)}
-              className="p-3 rounded-xl transition-all hover:bg-white/5"
+              className="p-2.5 sm:p-3 rounded-xl transition-all hover:bg-white/5 flex-shrink-0"
               style={{ border: border.subtle }}
             >
               <ArrowLeft className="h-5 w-5" style={{ color: text.secondary }} />
             </button>
-            <div>
-              <h1 className="text-2xl font-semibold" style={{ color: text.primary }}>{product.name}</h1>
-              <p className="text-sm mt-1" style={{ color: text.muted }}>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-semibold truncate" style={{ color: text.primary }}>{product.name}</h1>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: text.muted }}>
                 SKU: <span style={{ color: text.secondary }}>{product.sku || '—'}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <Link to={`/home/products/edit/${id}`}>
+          <div className="flex gap-3 flex-shrink-0">
+            <Link to={`/home/products/edit/${id}`} className="flex-1 sm:flex-initial">
               <button
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-indigo-600"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-indigo-600"
                 style={{ background: "#4f46e5", color: "#fff" }}
               >
                 <Edit className="h-4 w-4" />
-                Edit Product
+                <span className="whitespace-nowrap">Edit Product</span>
               </button>
             </Link>
 
@@ -242,7 +242,7 @@ const ViewProduct = () => {
           {/* Media Gallery */}
           <div className="lg:col-span-7 space-y-6">
             <SectionCard icon={ImageIcon} title="Media Gallery">
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
 
                 {/* Base Image */}
                 <div>
@@ -253,10 +253,10 @@ const ViewProduct = () => {
                 {/* Secondary Images */}
                 <div>
                   <p className="text-xs font-medium mb-3" style={{ color: text.muted }}>Secondary Images</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                     <ProductImage src={product.sec_img1_url} alt="Secondary 1" />
                     <ProductImage src={product.sec_img2_url} alt="Secondary 2" />
-                    <ProductImage src={product.sec_img3_url} alt="Certificate / Secondary 3" />
+                    <ProductImage src={product.sec_img3_url} alt="Certificate / Secondary 3" className="col-span-2 sm:col-span-1" />
                   </div>
                 </div>
 
@@ -273,7 +273,7 @@ const ViewProduct = () => {
                           <source src={product[key]} type="video/mp4" />
                         </video>
                       ) : (
-                        <div className="h-48 flex items-center justify-center rounded-2xl" style={{ background: bg.surface, border: border.subtle }}>
+                        <div className="h-40 sm:h-48 flex items-center justify-center rounded-2xl" style={{ background: bg.surface, border: border.subtle }}>
                           <span style={{ color: text.muted }}>No video available</span>
                         </div>
                       )}
@@ -288,11 +288,11 @@ const ViewProduct = () => {
                     <img
                       src={product.product_gif_url}
                       alt="GIF"
-                      className="max-w-md rounded-2xl"
+                      className="w-full max-w-md rounded-2xl"
                       style={{ border: border.subtle }}
                     />
                   ) : (
-                    <div className="h-48 flex items-center justify-center rounded-2xl" style={{ background: bg.surface, border: border.subtle }}>
+                    <div className="h-40 sm:h-48 flex items-center justify-center rounded-2xl" style={{ background: bg.surface, border: border.subtle }}>
                       <span style={{ color: text.muted }}>No GIF available</span>
                     </div>
                   )}
@@ -306,7 +306,7 @@ const ViewProduct = () => {
 
             {/* Pricing & Status */}
             <SectionCard icon={DollarSign} title="Pricing & Status">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
                 <span
                   className="px-4 py-1.5 rounded-full text-sm font-medium"
                   style={{
@@ -324,16 +324,16 @@ const ViewProduct = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div>
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                <div className="min-w-0">
                   <p className="text-xs" style={{ color: text.muted }}>Actual Price</p>
-                  <p className="text-3xl font-semibold mt-1" style={{ color: text.primary }}>
+                  <p className="text-2xl sm:text-3xl font-semibold mt-1 truncate" style={{ color: text.primary }}>
                     {formatPrice(product.actual_price)}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs" style={{ color: text.muted }}>Sale Price</p>
-                  <p className="text-3xl font-semibold mt-1" style={{ color: "#34d399" }}>
+                  <p className="text-2xl sm:text-3xl font-semibold mt-1 truncate" style={{ color: "#34d399" }}>
                     {formatPrice(product.sale_price)}
                   </p>
                 </div>
@@ -343,7 +343,7 @@ const ViewProduct = () => {
             {/* Basic Information */}
             <SectionCard icon={Package} title="Basic Information">
               <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                   <FieldRow label="Category" value={product.category} />
                   <FieldRow label="Sub-Category" value={product.subcategory} />
                 </div>
@@ -353,7 +353,7 @@ const ViewProduct = () => {
 
             {/* Certificate & Gemstone Details */}
             <SectionCard icon={Award} title="Certificate & Gemstone Details">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 text-sm">
                 <FieldRow label="Certificate No" value={attribute?.certificate_no} />
                 <FieldRow label="Species" value={attribute?.species} />
                 <FieldRow label="Color" value={attribute?.color} />
@@ -373,7 +373,7 @@ const ViewProduct = () => {
               {attribute?.other_chars && (
                 <div className="mt-6 pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   <p className="text-xs font-medium mb-2" style={{ color: text.muted }}>Other Characteristics</p>
-                  <p className="text-sm leading-relaxed" style={{ color: text.secondary }}>
+                  <p className="text-sm leading-relaxed break-words" style={{ color: text.secondary }}>
                     {attribute.other_chars}
                   </p>
                 </div>
