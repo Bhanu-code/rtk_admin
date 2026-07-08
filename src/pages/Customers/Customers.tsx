@@ -7,15 +7,17 @@ import {
 import { userRequest } from "@/utils/requestMethods";
 import { useSelector } from "react-redux";
 import { useQuery } from "react-query";
+import { useNavigate } from "react-router-dom";
 
 const Customers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const token = useSelector((state: any) => state.user.accessToken);
+  const navigateTo = useNavigate();
 
   const fetchCustomers = async () => {
     const response = await userRequest({
-      url: `${import.meta.env.VITE_PROXY_URL}/user/get-user/`,
+      url: `user/get-user`,
       method: "get",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -214,7 +216,14 @@ const Customers = () => {
                       >
                         <MessageSquare className="h-4 w-4" />
                       </button>
-                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors">
+                      <button
+                        onClick={() => navigateTo(`/home/customers/${customer?.id}/orders`)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                        title="View Orders"
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">
                         <ExternalLink className="h-4 w-4" />
                       </button>
                       <button className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors">

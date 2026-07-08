@@ -30,6 +30,7 @@ import NavbarOffer from "./pages/NavbarOffer/NavbarOffer";
 import Banner from "./pages/Banner/Banner";
 import PoojaMetalOptions from './pages/Pooja_and_Metal/PoojaMetalOptions'
 import OrderDetails from "./pages/Orders/OrderDetails";
+import UserOrders from "./pages/Customers/UserOrders";
 import { useSelector } from "react-redux";
 
 const ThemeContext = createContext({ theme: "light", toggleTheme: () => { } });
@@ -145,6 +146,10 @@ function App() {
         {
           path: "/home/customers",
           element: <Customers />,
+        },
+        {
+          path: "/home/customers/:userId/orders",
+          element: <UserOrders />,
         },
         // {
         //   path: "/home/users",
