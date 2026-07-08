@@ -3,6 +3,7 @@ import "./App.css";
 // import { useSelector } from "react-redux";
 import { useState } from "react";
 import { createBrowserRouter, Outlet, redirect, RouterProvider } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login/Login";
@@ -37,8 +38,8 @@ function App() {
   const userType = useSelector((state: any) => state.user.userType);
   // const userType = "admin"
 
-
   const [theme, setTheme] = useState("light");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
@@ -58,18 +59,60 @@ function App() {
     return (
       <ThemeContext.Provider value={value}>
         <div className="h-screen flex flex-col overflow-hidden">
-          {/* Navbar — fixed 56px (h-14) */}
-          <Navbar />
+          {/* Navbar — fixed height, includes mobile menu button */}
+          <div className="flex items-center bg-slate-900/95 backdrop-blur-sm">
+            {/* Hamburger — only visible below md */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSidebarOpen((prev) => !prev);
+                }
+              }}
+              aria-label="Toggle sidebar"
+              className="md:hidden flex items-center justify-center w-10 h-10 flex-shrink-0 text-white cursor-pointer select-none"
+            >
+              <span className="sr-only">Toggle sidebar</span>
+              {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            </div>
+            <div className="flex-1">
+              <Navbar />
+            </div>
+          </div>
 
           {/* Below navbar — fills remaining height */}
-          <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar — scrolls independently */}
-            <aside className="w-56 flex-shrink-0 overflow-y-auto overflow-x-hidden">
-              <Sidebar />
+          <div className="flex flex-1 overflow-hidden relative">
+            {/* Backdrop — only shown on mobile when sidebar is open */}
+            {sidebarOpen && (
+              <div
+                className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                onClick={() => setSidebarOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+
+            {/* Sidebar —
+                Desktop (md+): static, always visible, w-56
+                Mobile: fixed off-canvas drawer, slides in/out */}
+            <aside
+              className={`
+                fixed md:static inset-y-0 left-0 z-40
+                w-64 md:w-56 flex-shrink-0
+                overflow-y-auto overflow-x-hidden
+                bg-slate-900 md:bg-transparent
+                transform transition-transform duration-200 ease-in-out
+                ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+                md:translate-x-0
+              `}
+            >
+              <Sidebar onNavigate={() => setSidebarOpen(false)} />
             </aside>
 
             {/* Main content — scrolls independently */}
-            <main className="flex-1 overflow-y-auto bg-slate-950">
+            <main className="flex-1 overflow-y-auto bg-slate-950 min-w-0">
               <Outlet />
             </main>
           </div>

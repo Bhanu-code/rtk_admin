@@ -136,7 +136,7 @@ const FilePreview = ({
         : <img src={src} alt="Preview" className="w-full h-32 object-cover bg-slate-950" />
       }
       <button type="button" onClick={onRemove}
-        className="absolute top-1.5 right-1.5 h-6 w-6 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 h-6 w-6 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
       ><X className="h-3 w-3 text-white" /></button>
     </div>
   );
@@ -711,7 +711,7 @@ const EditProductForm = () => {
   // ── Loading state ────────────────────────────────────────────────────────────
   if (loadingProduct || isLoadingGemstones) {
     return (
-      <div className="flex justify-center items-center h-screen" style={{ background: "#020617" }}>
+      <div className="flex justify-center items-center h-screen px-4" style={{ background: "#020617" }}>
         <div className="flex flex-col items-center gap-3">
           <ClipLoader size={40} color="#6366f1" />
           <p className="text-slate-500 text-sm">Loading product data...</p>
@@ -722,24 +722,24 @@ const EditProductForm = () => {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen p-6 pb-20" style={{ background: "#020617" }}>
+    <div className="min-h-screen p-4 sm:p-6 pb-20" style={{ background: "#020617" }}>
       <div className="max-w-4xl mx-auto">
 
         {/* Page header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button type="button" onClick={() => navigate(-1)}
-              className="p-2.5 rounded-xl hover:bg-white/5 border border-white/5 transition-all"
+              className="p-2.5 rounded-xl hover:bg-white/5 border border-white/5 transition-all flex-shrink-0"
             >
               <ArrowLeft className="h-5 w-5 text-slate-400" />
             </button>
-            <div>
-              <h1 className="text-xl font-semibold text-white">Edit Product</h1>
-              <p className="text-xs text-slate-500 mt-0.5">{formData.name || "Update product details"}</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-white truncate">Edit Product</h1>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">{formData.name || "Update product details"}</p>
             </div>
           </div>
           <button type="button" onClick={handleSubmit} disabled={isBusy}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             {isBusy
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>
@@ -752,13 +752,13 @@ const EditProductForm = () => {
         <div className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60">
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-6 pt-3 pb-0 border-b border-white/5">
+          <div className="flex items-center gap-1 px-4 sm:px-6 pt-3 pb-0 border-b border-white/5 overflow-x-auto">
             {TABS.map(tab => {
               const done   = tabComplete[tab.id as keyof typeof tabComplete];
               const active = activeTab === tab.id;
               return (
                 <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-t-lg border-b-2 transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs font-medium rounded-t-lg border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     active
                       ? "text-white border-indigo-500 bg-white/5"
                       : "text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5"
@@ -776,16 +776,16 @@ const EditProductForm = () => {
 
           <form onSubmit={handleSubmit}>
 
-            <div className="px-6 py-5 min-h-[480px]">
+            <div className="px-4 sm:px-6 py-5 min-h-[480px]">
 
               {/* ══════════════════════ BASIC INFO ══════════════════════════ */}
               {activeTab === "basic" && (
                 <div className="space-y-5">
 
                   {/* Status */}
-                  <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
                     <span className="text-xs text-slate-500 font-medium">Status</span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {["Draft", "Feature", "Public"].map(s => (
                         <button key={s} type="button" onClick={() => set("status", s)}
                           className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all duration-200 ${
@@ -799,7 +799,7 @@ const EditProductForm = () => {
                   <p className={sectionTitle}>Product Details</p>
 
                   {/* Name + SKU (read-only) */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Product Name <span className="text-red-400">*</span></label>
                       <input name="name" value={formData.name} onChange={handleChange}
@@ -836,7 +836,7 @@ const EditProductForm = () => {
                   </div>
 
                   {/* Category + Subcategory */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Category <span className="text-red-400">*</span></label>
                       <div className="relative">
@@ -874,7 +874,7 @@ const EditProductForm = () => {
                     <div className="space-y-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                       <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gemstone Details</p>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Custom dropdown */}
                         <div ref={gemDropdownRef} className="relative">
                           <label className={labelCls}>Select Gemstone <span className="text-red-400">*</span></label>
@@ -882,11 +882,11 @@ const EditProductForm = () => {
                             className="w-full flex items-center justify-between bg-white/5 border border-white/5 hover:border-white/10 text-sm rounded-lg px-3 py-2 transition-colors focus:outline-none focus:border-indigo-500/50"
                           >
                             {formData.gemstone_name ? (
-                              <span className="flex items-center gap-2">
+                              <span className="flex items-center gap-2 min-w-0">
                                 <span className="h-2.5 w-2.5 rounded-full flex-shrink-0"
                                   style={{ background: GEMSTONE_COLORS[formData.gemstone_name] ?? "#a78bfa" }} />
-                                <span className="text-slate-200">{formData.gemstone_name}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1"
+                                <span className="text-slate-200 truncate">{formData.gemstone_name}</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 flex-shrink-0"
                                   style={{
                                     color:      GEMSTONE_COLORS[formData.gemstone_name] ?? "#a78bfa",
                                     background: `${GEMSTONE_COLORS[formData.gemstone_name] ?? "#8b5cf6"}22`,
@@ -901,7 +901,7 @@ const EditProductForm = () => {
                                 {isLoadingGemstones ? "Loading..." : "Choose a gemstone"}
                               </span>
                             )}
-                            <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${gemDropdownOpen ? "rotate-180" : ""}`} />
+                            <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 flex-shrink-0 ${gemDropdownOpen ? "rotate-180" : ""}`} />
                           </button>
 
                           {gemDropdownOpen && (
@@ -965,7 +965,7 @@ const EditProductForm = () => {
                           }}
                         >
                           <Gem className="h-4 w-4 flex-shrink-0" style={{ color: GEMSTONE_COLORS[formData.gemstone_name] }} />
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-sm font-medium text-white">{formData.gemstone_name}</p>
                             <p className="text-xs text-slate-500 mt-0.5">
                               SKU prefix <span className="font-mono font-bold"
@@ -982,7 +982,7 @@ const EditProductForm = () => {
                   )}
 
                   {/* Origin + Quantity */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className={labelCls}>Origin</label>
                       <input name="origin" value={formData.origin} onChange={handleChange}
@@ -1037,21 +1037,23 @@ const EditProductForm = () => {
               {activeTab === "media" && (
                 <div className="space-y-5">
                   <p className={sectionTitle}>Product Images <span className="text-slate-600 font-normal">(Base image required)</span></p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {([
                       { f: "base_img"  as ImageFieldName, l: "Base Image",        urlKey: "base_img_url"  },
                       { f: "sec_img1"  as ImageFieldName, l: "Secondary Image 1", urlKey: "sec_img1_url"  },
                       { f: "sec_img2"  as ImageFieldName, l: "Secondary Image 2", urlKey: "sec_img2_url"  },
-                    ]).map(({ f, l, urlKey }) => (
-                      <FileSlot key={f} field={f} label={l}
-                        file={formData[f]} existingUrl={formData[urlKey] as string | null}
-                        onChange={handleFileChange} onRemove={handleFileRemove}
-                      />
+                    ]).map(({ f, l, urlKey }, i) => (
+                      <div key={f} className={i === 0 ? "col-span-2 sm:col-span-1" : ""}>
+                        <FileSlot field={f} label={l}
+                          file={formData[f]} existingUrl={formData[urlKey] as string | null}
+                          onChange={handleFileChange} onRemove={handleFileRemove}
+                        />
+                      </div>
                     ))}
                   </div>
 
                   <p className={sectionTitle}>Videos &amp; GIF</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {([
                       { f: "product_vid"  as ImageFieldName, l: "Product Video 1", urlKey: "product_vid_url"    },
                       { f: "product_vid2" as ImageFieldName, l: "Product Video 2", urlKey: "product_video2_url" },
@@ -1090,7 +1092,7 @@ const EditProductForm = () => {
                   </div>
 
                   <p className={sectionTitle}>Certificate Fields</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className={labelCls}>Certificate No</label>
                       <input name="certificate_no" value={formData.certificate_no} readOnly className={inputCls} />
@@ -1131,7 +1133,7 @@ const EditProductForm = () => {
                   </div>
 
                   <p className={sectionTitle}>Gemstone Species &amp; Properties</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className={labelCls}>Species (from database)</label>
                       <div className="relative">
@@ -1190,7 +1192,7 @@ const EditProductForm = () => {
                         <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
                       </div>
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-3">
                       <label className={labelCls}>Other Characteristics</label>
                       <input name="other_chars" value={formData.other_chars} onChange={handleChange} className={inputCls} />
                     </div>
@@ -1206,7 +1208,7 @@ const EditProductForm = () => {
                   <p className={sectionTitle}>Weight</p>
                   {isGemstone ? (
                     /* Gemstone: carat is the primary input */
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className={labelCls}>
                           Weight (carat) <span className="text-red-400">*</span>
@@ -1227,7 +1229,7 @@ const EditProductForm = () => {
                     </div>
                   ) : (
                     /* Non-gemstone: grams is the primary input */
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className={labelCls}>
                           Weight (grams)
@@ -1252,7 +1254,7 @@ const EditProductForm = () => {
 
                   {/* Pricing */}
                   <p className={sectionTitle}>Pricing</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     {/* Left: unit price + MRP */}
                     <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3">
@@ -1350,7 +1352,7 @@ const EditProductForm = () => {
                   </div>
 
                   {/* Quantity */}
-                  <div className="w-48">
+                  <div className="w-full sm:w-48">
                     <label className={labelCls}>Quantity</label>
                     <input
                       value={formData.quantity}
@@ -1365,7 +1367,7 @@ const EditProductForm = () => {
                   {(formData.actual_price || formData.sale_price) && (
                     <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4">
                       <p className="text-xs font-medium text-slate-400 mb-3">Pricing Summary</p>
-                      <div className="flex items-center justify-around">
+                      <div className="flex items-center justify-around flex-wrap gap-3">
                         <div className="text-center">
                           <p className="text-xs text-slate-500 mb-1">MRP</p>
                           <p className="text-slate-400 font-semibold">₹{formData.actual_price || "—"}</p>
@@ -1394,8 +1396,8 @@ const EditProductForm = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="px-4 sm:px-6 py-4 border-t border-white/5 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
                 {TABS.map(tab => (
                   <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                     className={`h-2 rounded-full transition-all duration-200 ${
@@ -1408,17 +1410,17 @@ const EditProductForm = () => {
                 {activeTab !== "basic" && (
                   <button type="button"
                     onClick={() => setActiveTab(TABS[TABS.findIndex(t => t.id === activeTab) - 1].id)}
-                    className="px-4 py-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-lg transition-all"
+                    className="flex-1 sm:flex-initial px-4 py-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-lg transition-all"
                   >← Back</button>
                 )}
                 {activeTab !== "pricing" ? (
                   <button type="button"
                     onClick={() => setActiveTab(TABS[TABS.findIndex(t => t.id === activeTab) + 1].id)}
-                    className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
+                    className="flex-1 sm:flex-initial px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
                   >Next →</button>
                 ) : (
                   <button type="submit" disabled={isBusy}
-                    className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="flex-1 sm:flex-initial px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isBusy
                       ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</>

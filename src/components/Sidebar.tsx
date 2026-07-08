@@ -9,13 +9,23 @@ import {
 } from "@/components/ui/accordion";
 import { ChevronDown } from "lucide-react";
 
-const Sidebar = () => {
+interface SidebarProps {
+  /** Called whenever a nav link is clicked — used to close the mobile drawer */
+  onNavigate?: () => void;
+}
+
+const Sidebar = ({ onNavigate }: SidebarProps) => {
   const [active, setActive] = useState("Dashboard");
+
+  const handleSelect = (tabName: string) => {
+    setActive(tabName);
+    onNavigate?.();
+  };
 
   const renderTabButton = (item: any) => (
     <Link to={item.link} key={item.tab_name} className="block w-full">
       <button
-        onClick={() => setActive(item.tab_name)}
+        onClick={() => handleSelect(item.tab_name)}
         className={`
           group relative w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium
           transition-all duration-200 flex items-center gap-3
@@ -39,7 +49,7 @@ const Sidebar = () => {
     items.map((item: any) => (
       <Link to={item.link} key={item.tab_name} className="block w-full">
         <button
-          onClick={() => setActive(item.tab_name)}
+          onClick={() => handleSelect(item.tab_name)}
           className={`
             group relative w-full text-left pl-9 pr-4 py-2 rounded-lg text-sm
             transition-all duration-200 flex items-center gap-2
@@ -116,18 +126,7 @@ const Sidebar = () => {
         )}
       </nav>
 
-      {/* Footer */}
-      {/* <div className="pt-3 border-t border-white/5">
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
-          <div className="h-7 w-7 rounded-full bg-slate-700 ring-1 ring-white/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-slate-300 text-xs font-medium">U</span>
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-slate-200 text-xs font-medium truncate">User Name</span>
-            <span className="text-slate-500 text-xs truncate">user@email.com</span>
-          </div>
-        </div>
-      </div> */}
+     
     </aside>
   );
 };

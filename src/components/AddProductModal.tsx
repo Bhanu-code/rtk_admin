@@ -148,7 +148,7 @@ const FilePreview = ({ file, onRemove }: { file: File | null; onRemove: () => vo
         : <img src={preview} alt="Preview" className="w-full h-32 object-cover bg-slate-950" />
       }
       <button type="button" onClick={onRemove}
-        className="absolute top-1.5 right-1.5 h-6 w-6 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 h-6 w-6 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
       ><X className="h-3 w-3 text-white" /></button>
     </div>
   );
@@ -649,30 +649,30 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 flex flex-col max-h-[92vh]">
+      <div className="relative w-full h-full sm:h-auto max-w-4xl bg-slate-900 border border-white/10 sm:rounded-2xl shadow-2xl shadow-black/60 flex flex-col sm:max-h-[92vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
-          <div>
-            <h2 className="text-white font-semibold">Add New Product</h2>
-            <p className="text-slate-500 text-xs mt-0.5">Fill in all sections to create a product listing</p>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/5 flex-shrink-0">
+          <div className="min-w-0">
+            <h2 className="text-white font-semibold truncate">Add New Product</h2>
+            <p className="text-slate-500 text-xs mt-0.5 hidden sm:block">Fill in all sections to create a product listing</p>
           </div>
-          <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
+          <button onClick={onClose} className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 px-6 pt-3 pb-0 border-b border-white/5 flex-shrink-0">
+        <div className="flex items-center gap-1 px-4 sm:px-6 pt-3 pb-0 border-b border-white/5 flex-shrink-0 overflow-x-auto">
           {TABS.map(tab => {
             const done   = tabComplete[tab.id as keyof typeof tabComplete];
             const active = activeTab === tab.id;
             return (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-t-lg border-b-2 transition-all duration-200 ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs font-medium rounded-t-lg border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                   active
                     ? "text-white border-indigo-500 bg-white/5"
                     : "text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/5"
@@ -691,16 +691,16 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
 
-          <div className="px-6 py-5">
+          <div className="px-4 sm:px-6 py-5">
 
             {/* ══════════════════════ BASIC INFO ══════════════════════════════ */}
             {activeTab === "basic" && (
               <div className="space-y-5">
 
                 {/* Status pill row */}
-                <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
+                <div className="flex flex-wrap items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
                   <span className="text-xs text-slate-500 font-medium">Status</span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {["Draft","Feature","Public"].map(s => (
                       <button key={s} type="button" onClick={() => set("status", s)}
                         className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all duration-200 ${
@@ -714,7 +714,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 <p className={sectionTitle}>Product Details</p>
 
                 {/* Name + SKU */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Product Name <span className="text-red-400">*</span></label>
                     <input name="name" value={formData.name} onChange={handleChange}
@@ -748,7 +748,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 </div>
 
                 {/* Category + Subcategory (non-gemstone) */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Category <span className="text-red-400">*</span></label>
                     <div className="relative">
@@ -786,7 +786,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                   <div className="space-y-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gemstone Details</p>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Custom searchable dropdown */}
                       <div ref={gemDropdownRef} className="relative">
                         <label className={labelCls}>Select Gemstone <span className="text-red-400">*</span></label>
@@ -796,11 +796,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                           className="w-full flex items-center justify-between bg-white/5 border border-white/5 hover:border-white/10 text-sm rounded-lg px-3 py-2 transition-colors focus:outline-none focus:border-indigo-500/50"
                         >
                           {formData.gemstone_name ? (
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2 min-w-0">
                               <span className="h-2.5 w-2.5 rounded-full flex-shrink-0"
                                 style={{ background: GEMSTONE_COLORS[formData.gemstone_name] ?? "#a78bfa" }} />
-                              <span className="text-slate-200">{formData.gemstone_name}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1"
+                              <span className="text-slate-200 truncate">{formData.gemstone_name}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1 flex-shrink-0"
                                 style={{
                                   color: GEMSTONE_COLORS[formData.gemstone_name] ?? "#a78bfa",
                                   background: `${GEMSTONE_COLORS[formData.gemstone_name] ?? "#8b5cf6"}22`,
@@ -815,7 +815,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                               {isLoadingGemstones ? "Loading..." : "Choose a gemstone"}
                             </span>
                           )}
-                          <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${gemDropdownOpen ? "rotate-180" : ""}`} />
+                          <ChevronDown className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 flex-shrink-0 ${gemDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
 
                         {/* Dropdown list */}
@@ -880,7 +880,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                         }}
                       >
                         <Gem className="h-4 w-4 flex-shrink-0" style={{ color: GEMSTONE_COLORS[formData.gemstone_name] }} />
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-medium text-white">{formData.gemstone_name}</p>
                           <p className="text-xs text-slate-500 mt-0.5">
                             SKU prefix <span className="font-mono font-bold"
@@ -935,14 +935,16 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
             {activeTab === "media" && (
               <div className="space-y-5">
                 <p className={sectionTitle}>Product Images <span className="text-slate-600 font-normal">(Base image required)</span></p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {(["base_img","sec_img1","sec_img2"] as ImageFieldName[]).map((f, i) => (
-                    <FileSlot key={f} field={f} label={i === 0 ? "Base Image" : `Secondary Image ${i}`}
-                      file={formData[f]} onChange={handleFileChange} onRemove={handleFileRemove} />
+                    <div key={f} className={i === 0 ? "col-span-2 sm:col-span-1" : ""}>
+                      <FileSlot field={f} label={i === 0 ? "Base Image" : `Secondary Image ${i}`}
+                        file={formData[f]} onChange={handleFileChange} onRemove={handleFileRemove} />
+                    </div>
                   ))}
                 </div>
                 <p className={sectionTitle}>Videos &amp; GIF</p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {([
                     { f: "product_vid"  as ImageFieldName, l: "Product Video 1" },
                     { f: "product_vid2" as ImageFieldName, l: "Product Video 2" },
@@ -971,7 +973,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                   </div>
                 </div>
                 <p className={sectionTitle}>Certificate Fields</p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className={labelCls}>Certificate No</label>
                     <input name="certificate_no" value={formData.certificate_no} readOnly className={inputCls} />
@@ -999,7 +1001,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                   </div>
                 </div>
                 <p className={sectionTitle}>Gemstone Species &amp; Properties</p>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className={labelCls}>Species (from database)</label>
                     <div className="relative">
@@ -1074,7 +1076,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 <p className={sectionTitle}>Weight</p>
                 {isGemstone ? (
                   /* ── Gemstone: carat is the primary input ─── */
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className={labelCls}>
                         Weight (carat) <span className="text-red-400">*</span>
@@ -1095,7 +1097,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                   </div>
                 ) : (
                   /* ── Non-gemstone: grams is the primary input ─── */
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className={labelCls}>
                         Weight (grams)
@@ -1121,7 +1123,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 {/* Pricing section */}
                 <p className={sectionTitle}>Pricing</p>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Left: unit price + MRP */}
                   <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3">
                     <p className="text-xs text-slate-500 font-medium">Base Price</p>
@@ -1218,7 +1220,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 </div>
 
                 {/* Quantity */}
-                <div className="w-48">
+                <div className="w-full sm:w-48">
                   <label className={labelCls}>Quantity</label>
                   <input
                     value={formData.quantity}
@@ -1233,7 +1235,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
                 {(formData.actual_price || formData.sale_price) && (
                   <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4">
                     <p className="text-xs font-medium text-slate-400 mb-3">Pricing Summary</p>
-                    <div className="flex items-center justify-around">
+                    <div className="flex items-center justify-around flex-wrap gap-3">
                       <div className="text-center">
                         <p className="text-xs text-slate-500 mb-1">MRP</p>
                         <p className="text-slate-400 font-semibold">₹{formData.actual_price || "—"}</p>
@@ -1263,8 +1265,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
         </form>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/5 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="px-4 sm:px-6 py-4 border-t border-white/5 flex-shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             {TABS.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 className={`h-2 rounded-full transition-all duration-200 ${
@@ -1277,17 +1279,17 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose }) => 
             {activeTab !== "basic" && (
               <button type="button"
                 onClick={() => setActiveTab(TABS[TABS.findIndex(t => t.id === activeTab) - 1].id)}
-                className="px-4 py-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-lg transition-all"
+                className="flex-1 sm:flex-initial px-4 py-2 text-sm text-slate-400 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-lg transition-all"
               >← Back</button>
             )}
             {activeTab !== "pricing" ? (
               <button type="button"
                 onClick={() => setActiveTab(TABS[TABS.findIndex(t => t.id === activeTab) + 1].id)}
-                className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
+                className="flex-1 sm:flex-initial px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
               >Next →</button>
             ) : (
               <button onClick={handleSubmit} disabled={isSubmitting}
-                className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="flex-1 sm:flex-initial px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting
                   ? <><ClipLoader size={13} color="#fff" /> Creating...</>
